@@ -7,7 +7,7 @@ Get the BetCheck sports prediction engine running in minutes.
 ## ⚡ Option 1: Docker (Easiest)
 
 ### Prerequisites
-- Docker & Docker Compose installed
+- Docker Desktop installed (includes Docker Compose v2)
 
 ### Steps
 ```bash
@@ -21,7 +21,7 @@ cp .env.example .env
 # For testing, the demo credentials work fine
 
 # 4. Build and start services
-docker-compose up --build
+docker compose up --build
 
 # 5. Wait for services to start
 # Backend: http://localhost:8000
