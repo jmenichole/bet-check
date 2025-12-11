@@ -32,8 +32,8 @@ You now have a fully automated BetCheck system on your Mac that:
 
 Once Mac restarts (or services are running):
 - **Frontend:** http://localhost:3001
-- **Backend API:** http://localhost:9001
-- **API Docs:** http://localhost:9001/docs
+- **Backend API:** https://jmenichole.github.io/bet-check
+- **API Docs:** https://jmenichole.github.io/bet-check/docs
 
 ---
 

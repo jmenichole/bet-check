@@ -241,5 +241,5 @@ Enhanced: 0 0 20px rgba(255, 0, 204, 0.6) + inset glow
 **Status**: ✅ **COMPLETE** - Ready for production
 
 **Access**: http://localhost:3001
-**Backend**: http://localhost:9001
-**API Docs**: http://localhost:9001/docs
+**Backend**: https://jmenichole.github.io/bet-check
+**API Docs**: https://jmenichole.github.io/bet-check/docs

@@ -72,7 +72,7 @@ The styles **are definitely there**. When you visit http://localhost:3001:
 ## If Styles Still Don't Show:
 
 1. **Check browser console** for errors (F12)
-2. **Verify backend is running** (http://localhost:9001/health)
+2. **Verify backend is running** (https://jmenichole.github.io/bet-check/health)
 3. **Check Next.js compiled** (look for "Ready in X ms" in logs)
 4. **Verify CSS is served** (check Network tab in DevTools)
 

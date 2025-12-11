@@ -134,8 +134,8 @@ launchctl load ~/Library/LaunchAgents/com.jmenichole.betcheck-update-games.plist
 | Service | URL | Purpose |
 |---------|-----|---------|
 | **Frontend** | http://localhost:3001 | Games dashboard & predictions |
-| **Backend API** | http://localhost:9001 | REST API |
-| **API Docs** | http://localhost:9001/docs | Swagger UI documentation |
+| **Backend API** | https://jmenichole.github.io/bet-check | REST API |
+| **API Docs** | https://jmenichole.github.io/bet-check/docs | Swagger UI documentation |
 
 ---
 

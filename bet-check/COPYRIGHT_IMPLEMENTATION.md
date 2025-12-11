@@ -106,7 +106,7 @@ All code files now include copyright headers with:
 - **Status:** ✅ Running
 - **Port:** 9001
 - **Process ID:** 90225
-- **URL:** http://localhost:9001
+- **URL:** https://jmenichole.github.io/bet-check
 
 ### Frontend UI
 - **Status:** ✅ Running

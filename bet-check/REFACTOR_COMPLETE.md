@@ -117,7 +117,7 @@ Project Root/
 ### Running Services
 ```
 ✅ Backend API
-   - URL: http://localhost:9001
+   - URL: https://jmenichole.github.io/bet-check
    - Service: FastAPI (Python)
    - Status: Running on port 9001
    - Health: /health endpoint available
@@ -270,10 +270,10 @@ App (_app.tsx)
 http://localhost:3001
 
 # Backend API
-http://localhost:9001
+https://jmenichole.github.io/bet-check
 
 # API Documentation
-http://localhost:9001/docs
+https://jmenichole.github.io/bet-check/docs
 ```
 
 ### Navigate the App

@@ -161,8 +161,8 @@ ls -lah /Users/fullsail/bet-check/logs/
 
 Once auto-restart is configured and Mac boots:
 - **Frontend:** http://localhost:3001
-- **Backend API:** http://localhost:9001
-- **API Documentation:** http://localhost:9001/docs (Swagger UI)
+- **Backend API:** https://jmenichole.github.io/bet-check
+- **API Documentation:** https://jmenichole.github.io/bet-check/docs (Swagger UI)
 
 ---
 
