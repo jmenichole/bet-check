@@ -3,6 +3,6 @@ uvicorn==0.24.0
 pydantic==2.12.5
 python-dotenv==1.0.0
 supabase==2.3.4
-requests==2.31.0
+requests==2.32.4
 httpx==0.25.0
 numpy>=1.26.0
