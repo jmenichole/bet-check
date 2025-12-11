@@ -20,7 +20,7 @@ cp .env.example .env
 # 3. (Optional) Edit .env with your Supabase credentials
 # For testing, the demo credentials work fine
 
-# 4. Build and start services
+# 4. Build and start services (ensure Docker Desktop is running first)
 docker compose up --build
 
 # 5. Wait for services to start
