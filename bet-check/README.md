@@ -1,17 +1,51 @@
 # Sports Prediction Tool - Bet Check
 
-A full-stack AI-powered sports prediction tool built with **FastAPI** (backend), **Next.js** (frontend), and **Supabase/PostgreSQL** (database). The system automatically learns and adapts its prediction models based on outcomes.
+Developer essentials only—everything you need to build, run, and verify the app quickly. Longer narrative docs are optional; start here.
 
-## Features
+## Developer Essentials (read me first)
 
-✅ **Intelligent Predictions**: Predicts game outcomes using weighted factors (recent form, injuries, efficiency, home court advantage)  
-✅ **Adaptive Learning**: Automatically adjusts factor weights based on prediction accuracy (0-100%)  
-✅ **AI Sports Guru**: Embedded chat interface with natural language game recommendations 🤖  
-✅ **Confidence Scores**: Each prediction includes confidence percentage and top 3 reasons  
-✅ **Real-time Dashboard**: Monitor accuracy metrics and factor effectiveness  
-✅ **RESTful API**: Clean endpoints for games, predictions, and results  
-✅ **Responsive Design**: Mobile-friendly UI built with Tailwind CSS  
-✅ **Self-Learning**: Fully automatic weight adjustment with no manual intervention  
+**Prereqs**: Docker Desktop (includes Compose v2), Python 3.9+, Node 18+
+
+**Local .env** (root):
+- `SUPABASE_URL`, `SUPABASE_KEY` (demo values in `.env.example`)
+- `NEXT_PUBLIC_API_URL`
+  - Local dev: `http://localhost:8000`
+  - In docker-compose network: `http://backend:8000`
+
+**Fast path (Docker)**
+```bash
+cp .env.example .env
+docker compose up --build
+# Frontend: http://localhost:3000
+# Backend:  http://localhost:8000
+```
+
+**Local dev (no Docker)**
+```bash
+pip install -r requirements.txt
+cd frontend && npm install
+
+# backend
+python -m uvicorn backend.main:app --reload --port 8000
+
+# frontend (new terminal)
+cd frontend && npm run dev
+```
+
+**Key commands**
+- Tests: `python test_api.py` (API), `python test_chat.py` (chat endpoints)
+- Seed data: `python scripts/seed_factors.py` ; update games: `python scripts/update_games.py`
+- Logs in docker: `docker compose logs -f backend` / `frontend`
+
+**API endpoints**
+- `GET /games`, `GET /predict/{game_id}`
+- `POST /log_result`, `GET /analytics`
+- Chat: `POST /chat`, `GET /chat/popular-games`, `GET /chat/history?user_id=`
+
+**Where to look next**
+- Quick start: `QUICK_START_GUIDE.md` (short)
+- Chat setup/testing: `AI_GURU_SETUP.md`
+- docker-compose: `docker-compose.yml`
 
 ## Architecture
 

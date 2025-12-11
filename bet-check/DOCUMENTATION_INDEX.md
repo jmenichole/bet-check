@@ -11,61 +11,15 @@ Complete guide to all project documentation and resources.
 - Get running in 5 minutes
 - Docker setup (easiest)
 - Local development setup
-- Basic testing
+## Documentation Index (developer essentials only)
 
-### For Project Overview
-👉 **Read**: [`PROJECT_COMPLETE.md`](./PROJECT_COMPLETE.md)
-- What you have (complete feature list)
-- How to use the application
-- Common tasks and troubleshooting
-- Success criteria
+Use these primary docs:
+- `README.md` — developer essentials, commands, endpoints
+- `QUICK_START_GUIDE.md` — short start with Docker/local
+- `AI_GURU_SETUP.md` — chat endpoints + frontend usage
+- `docker-compose.yml` — service wiring (frontend→backend)
 
----
-
-## 📖 Core Documentation
-
-### `README.md`
-**Full project documentation**  
-- Project features and architecture
-- Complete setup instructions
-- API reference
-- Data models
-- Troubleshooting guide
-- Contribution guidelines
-
-**Time to read**: 10-15 minutes  
-**When to read**: After quick start, before development
-
-### `START_HERE.md`
-**Entry point for developers**  
-- Project structure overview
-- Key files explanation
-- Getting started checklist
-- Common development tasks
-
-**Time to read**: 5 minutes  
-**When to read**: On first clone
-
-### `github/copilot-instructions.md`
-**Architecture and design specifications**  
-- System architecture overview
-- Prediction pipeline explanation
-- Database schema details
-- API endpoint specifications
-- Developer workflows
-- Integration points
-- Testing & validation approaches
-
-**Time to read**: 15-20 minutes  
-**When to read**: Before modifying core functionality
-
----
-
-## 🚀 Deployment & Launch
-
-### `DEPLOYMENT_GUIDE.md`
-**Complete production deployment instructions**  
-- Pre-deployment checklist
+Optional references (everything else): architecture, retros, long-form summaries. Keep them for history, but day-to-day dev should start and end with the four above.
 - Docker deployment
 - Cloud platform deployment (AWS, GCP, Azure)
 - Database setup (Supabase)
