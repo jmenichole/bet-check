@@ -37,15 +37,29 @@ export default function Home() {
   const [games, setGames] = useState<Game[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [selectedSport, setSelectedSport] = useState<string>('all')
+
+  const sports = [
+    { id: 'all', name: 'All Sports' },
+    { id: 'nba', name: 'NBA' },
+    { id: 'nfl', name: 'NFL' },
+    { id: 'nhl', name: 'NHL' },
+    { id: 'mlb', name: 'MLB' },
+    { id: 'ncaaf', name: 'NCAAF' },
+    { id: 'ncaab', name: 'NCAAB' },
+  ]
 
   useEffect(() => {
     fetchGames()
-  }, [])
+  }, [selectedSport])
 
   const fetchGames = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API_URL}/games`)
+      const url = selectedSport === 'all' 
+        ? `${API_URL}/games` 
+        : `${API_URL}/games?sport=${selectedSport}`
+      const response = await axios.get(url)
       setGames(response.data)
       setError('')
     } catch (err) {
@@ -81,6 +95,23 @@ export default function Home() {
           <p className="text-text-secondary text-lg">
             Click on any game to view predictions and analysis
           </p>
+        </div>
+
+        {/* Sport Filter Tabs */}
+        <div className="mb-8 flex flex-wrap gap-2">
+          {sports.map((sport) => (
+            <button
+              key={sport.id}
+              onClick={() => setSelectedSport(sport.id)}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 ${
+                selectedSport === sport.id
+                  ? 'bg-neon-pink text-dark-bg border-2 border-neon-pink'
+                  : 'bg-dark-card border-2 border-dark-border text-text-primary hover:border-neon-pink hover:text-neon-pink'
+              }`}
+            >
+              {sport.name}
+            </button>
+          ))}
         </div>
 
         {/* Suggested Questions */}

@@ -105,43 +105,67 @@ DEMO_FACTORS = [
 
 # Fetch live games from ESPN on startup
 def fetch_live_games():
-    """Fetch current NBA games from ESPN API"""
+    """Fetch current games from ESPN API - all major sports"""
     try:
         import requests
         from datetime import timedelta
         
-        games = []
-        for days_ahead in range(3):  # Next 3 days
-            target_date = datetime.now() + timedelta(days=days_ahead)
-            date_str = target_date.strftime("%Y%m%d")
-            url = f"http://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={date_str}"
-            
-            response = requests.get(url, timeout=5)
-            if response.status_code == 200:
-                data = response.json()
-                for event in data.get("events", []):
-                    try:
-                        comps = event.get("competitions", [{}])[0]
-                        competitors = comps.get("competitors", [])
-                        if len(competitors) >= 2:
-                            games.append({
-                                "game_id": f"nba_{event.get('id')}",
-                                "sport": "nba",
-                                "team_a": competitors[0].get("team", {}).get("displayName", "Unknown"),
-                                "team_b": competitors[1].get("team", {}).get("displayName", "Unknown"),
-                                "scheduled_date": event.get("date", "")[:10],
-                                "result": None
-                            })
-                    except:
-                        continue
-        return games if games else None
-    except:
+        # ESPN API endpoints for different sports
+        sports_endpoints = {
+            "nba": "basketball/nba",
+            "nfl": "football/nfl",
+            "mlb": "baseball/mlb",
+            "nhl": "hockey/nhl",
+            "ncaaf": "football/college-football",
+            "ncaab": "basketball/mens-college-basketball",
+        }
+        
+        all_games = []
+        
+        for sport_key, sport_path in sports_endpoints.items():
+            for days_ahead in range(3):  # Next 3 days
+                try:
+                    target_date = datetime.now() + timedelta(days=days_ahead)
+                    date_str = target_date.strftime("%Y%m%d")
+                    url = f"http://site.api.espn.com/apis/site/v2/sports/{sport_path}/scoreboard?dates={date_str}"
+                    
+                    response = requests.get(url, timeout=10)
+                    if response.status_code == 200:
+                        data = response.json()
+                        events = data.get("events", [])
+                        
+                        for event in events:
+                            try:
+                                comps = event.get("competitions", [{}])[0]
+                                competitors = comps.get("competitors", [])
+                                if len(competitors) >= 2:
+                                    all_games.append({
+                                        "game_id": f"{sport_key}_{event.get('id')}",
+                                        "sport": sport_key,
+                                        "team_a": competitors[0].get("team", {}).get("displayName", "Unknown"),
+                                        "team_b": competitors[1].get("team", {}).get("displayName", "Unknown"),
+                                        "scheduled_date": event.get("date", "")[:10],
+                                        "result": None
+                                    })
+                            except Exception as e:
+                                continue
+                        
+                        if events:
+                            print(f"✓ Loaded {len(events)} {sport_key.upper()} games for {date_str}")
+                except Exception as e:
+                    print(f"⚠ Failed to fetch {sport_key.upper()} games: {e}")
+                    continue
+        
+        print(f"📊 Total games loaded: {len(all_games)}")
+        return all_games if all_games else None
+    except Exception as e:
+        print(f"✗ Error fetching live games: {e}")
         return None
 
 DEMO_GAMES = fetch_live_games() or [
     {"game_id": "nba_demo_1", "sport": "nba", "team_a": "Los Angeles Lakers", "team_b": "Boston Celtics", "scheduled_date": datetime.now().strftime("%Y-%m-%d"), "result": None},
-    {"game_id": "nba_demo_2", "sport": "nba", "team_a": "Golden State Warriors", "team_b": "Phoenix Suns", "scheduled_date": datetime.now().strftime("%Y-%m-%d"), "result": None},
-    {"game_id": "nba_demo_3", "sport": "nba", "team_a": "Miami Heat", "team_b": "Milwaukee Bucks", "scheduled_date": datetime.now().strftime("%Y-%m-%d"), "result": None},
+    {"game_id": "nfl_demo_1", "sport": "nfl", "team_a": "Kansas City Chiefs", "team_b": "Buffalo Bills", "scheduled_date": datetime.now().strftime("%Y-%m-%d"), "result": None},
+    {"game_id": "mlb_demo_1", "sport": "mlb", "team_a": "New York Yankees", "team_b": "Los Angeles Dodgers", "scheduled_date": datetime.now().strftime("%Y-%m-%d"), "result": None},
 ]
 
 # ==================== Core Prediction Logic ====================
