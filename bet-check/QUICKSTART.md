@@ -1,5 +1,6 @@
-# Quick Start Guide
+# Quick Start Guide (Reference)
 
+For daily use, prefer `README.md` and `QUICK_START_GUIDE.md`. This file is a longer reference.
 Follow these steps to launch Bet Check locally. **Time required: 10-15 minutes**
 
 ## Prerequisites Checklist

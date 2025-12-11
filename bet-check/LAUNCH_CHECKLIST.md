@@ -1,6 +1,6 @@
-# ✅ Launch Checklist
+# ✅ Launch Checklist (Reference)
 
-Complete these actionable steps in order to get your sports prediction tool running.
+For quick setup, use `README.md` and `QUICK_START_GUIDE.md`. This checklist is a longer reference.
 
 ---
 
