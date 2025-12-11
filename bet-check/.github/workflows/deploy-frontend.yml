@@ -29,9 +29,27 @@ jobs:
         with:
           node-version: '18'
       
+      - name: Detect package manager (frontend)
+        id: pm
+        run: |
+          cd frontend
+          if [ -f "yarn.lock" ]; then
+            echo "manager=yarn" >> $GITHUB_OUTPUT
+            echo "install=install --frozen-lockfile" >> $GITHUB_OUTPUT
+          elif [ -f "package-lock.json" ]; then
+            echo "manager=npm" >> $GITHUB_OUTPUT
+            echo "install=ci" >> $GITHUB_OUTPUT
+          elif [ -f "pnpm-lock.yaml" ]; then
+            echo "manager=pnpm" >> $GITHUB_OUTPUT
+            echo "install=install --frozen-lockfile" >> $GITHUB_OUTPUT
+          else
+            echo "Unable to determine package manager"
+            exit 1
+          fi
+
       - name: Install dependencies
         working-directory: ./frontend
-        run: npm ci
+        run: ${{ steps.pm.outputs.manager }} ${{ steps.pm.outputs.install }}
       
       - name: Build Next.js app
         working-directory: ./frontend
