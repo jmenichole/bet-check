@@ -2,7 +2,7 @@
 Fetch upcoming games from sports API and update database.
 Run this periodically to keep games list fresh (e.g., daily via cron).
 
-Copyright (c) 2025 Jamie McNichol
+Copyright (c) 2025 Jmenichole
 Licensed under MIT License
 https://jmenichole.github.io/Portfolio/
 """

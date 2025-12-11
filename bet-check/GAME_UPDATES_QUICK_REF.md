@@ -181,5 +181,5 @@ launchctl load ~/Library/LaunchAgents/com.jmenichole.betcheck-update-games.plist
 ---
 
 ## Copyright
-Copyright (c) 2025 Jamie McNichol - MIT License
+Copyright (c) 2025 Jmenichole - MIT License
 https://jmenichole.github.io/Portfolio/

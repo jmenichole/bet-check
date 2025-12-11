@@ -247,5 +247,5 @@ python3 update_games.py
 - **Services restart if they crash** (KeepAlive setting) ✅
 
 ## Copyright
-Copyright (c) 2025 Jamie McNichol - MIT License
+Copyright (c) 2025 Jmenichole - MIT License
 https://jmenichole.github.io/Portfolio/

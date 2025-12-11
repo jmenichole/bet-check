@@ -1,8 +1,8 @@
 /**
  * Header Component - Page header with navigation
  * 
- * Copyright (c) 2025 Jamie McNichol
- * Licensed under MIT License
+ * Copyright (c) 2025 Jmenichole
+ * Licensed under CC BY-NC 4.0
  * https://jmenichole.github.io/Portfolio/
  */
 
@@ -35,6 +35,12 @@ export default function Header({ title, subtitle, showNav = true }: HeaderProps)
               <Link href="/">
                 <span className="px-3 py-2 rounded-lg text-text-secondary hover:text-neon-pink hover:bg-dark-card transition-all duration-300">
                   Games
+                </span>
+              </Link>
+              <Link href="/guru">
+                <span className="px-3 py-2 rounded-lg text-text-secondary hover:text-neon-cyan hover:bg-dark-card transition-all duration-300 flex items-center gap-1">
+                  <span>🤖</span>
+                  <span>AI Guru</span>
                 </span>
               </Link>
               <Link href="/dashboard">

@@ -1,8 +1,8 @@
 /**
  * Footer Component - Brand footer with social links and TiltCheck CTA
  * 
- * Copyright (c) 2025 Jamie McNichol
- * Licensed under MIT License
+ * Copyright (c) 2025 Jmenichole
+ * Licensed under CC BY-NC 4.0
  * https://jmenichole.github.io/Portfolio/
  */
 
@@ -51,18 +51,29 @@ export default function Footer() {
           {/* Copyright & Tagline */}
           <div className="text-center md:text-left">
             <p className="text-gray-400 text-sm mb-1">
-              &copy; 2025 Jamie McNichol. All rights reserved.
+              &copy; 2025 Jmenichole. All rights reserved.
             </p>
-            <a
-              href="https://jmenichole.github.io/Portfolio/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-300 hover:text-neon-pink transition-colors duration-300 
-                       text-sm inline-flex items-center gap-2 group"
-            >
-              Made for degens by degens
-              <FaHeart className="text-neon-pink animate-pulse group-hover:scale-110 transition-transform" />
-            </a>
+            <div className="flex flex-col md:flex-row items-center gap-3">
+              <a
+                href="https://jmenichole.github.io/Portfolio/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-300 hover:text-neon-pink transition-colors duration-300 
+                         text-sm inline-flex items-center gap-2 group"
+              >
+                Made for degens by degens
+                <FaHeart className="text-neon-pink animate-pulse group-hover:scale-110 transition-transform" />
+              </a>
+              <span className="text-gray-600 hidden md:inline">•</span>
+              <a
+                href="https://www.ncpgambling.org/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-500 hover:text-neon-cyan transition-colors duration-300 text-xs"
+              >
+                🎲 Responsible Gaming Resources
+              </a>
+            </div>
           </div>
 
           {/* Social Links */}

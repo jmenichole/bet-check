@@ -1,8 +1,8 @@
 /**
  * Home Page - List of upcoming games
  * 
- * Copyright (c) 2025 Jamie McNichol
- * Licensed under MIT License
+ * Copyright (c) 2025 Jmenichole
+ * Licensed under CC BY-NC 4.0
  * https://jmenichole.github.io/Portfolio/
  */
 

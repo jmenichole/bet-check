@@ -211,5 +211,5 @@ Your BetCheck system is now:
 
 **Made for degens by degens** ❤️
 
-Copyright (c) 2025 Jamie McNichol
+Copyright (c) 2025 Jmenichole
 https://jmenichole.github.io/Portfolio/

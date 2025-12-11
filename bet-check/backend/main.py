@@ -2,7 +2,7 @@
 Sports Prediction Tool - FastAPI Backend
 This service handles game predictions using weighted factors and adaptive learning.
 
-Copyright (c) 2025 Jamie McNichol
+Copyright (c) 2025 Jmenichole
 Licensed under MIT License
 https://jmenichole.github.io/Portfolio/
 """
@@ -79,6 +79,15 @@ class Prediction(BaseModel):
 class ResultLog(BaseModel):
     game_id: str
     actual_outcome: str
+
+class ChatMessage(BaseModel):
+    message: str
+    user_id: Optional[str] = "anonymous"
+
+class ChatResponse(BaseModel):
+    ai_message: str
+    suggested_games: List[dict]
+    timestamp: str
 
 # ==================== Demo Data (for when Supabase is not configured) ====================
 
@@ -431,6 +440,198 @@ async def get_analytics():
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== AI Sports Guru Chat Endpoints ====================
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat_with_ai(chat_message: ChatMessage):
+    """
+    AI Sports Guru chat endpoint - analyzes user question and suggests relevant games
+    with predictions and reasoning.
+    
+    This endpoint:
+    1. Analyzes the user's question about sports/betting
+    2. Fetches relevant games from the database
+    3. Gets predictions with confidence scores
+    4. Constructs an intelligent response with game suggestions
+    5. Stores chat history in database
+    """
+    try:
+        user_message = chat_message.message.lower()
+        timestamp = datetime.now().isoformat()
+        
+        # Store user message in database (if connected)
+        if supabase:
+            try:
+                supabase.table("chat_messages").insert({
+                    "user_id": chat_message.user_id,
+                    "message_text": chat_message.message,
+                    "is_ai": False,
+                    "timestamp": timestamp
+                }).execute()
+            except:
+                pass  # Continue even if storage fails
+        
+        # Fetch games from database or demo data
+        if supabase:
+            games_response = supabase.table("games").select("*").is_("result", "null").limit(10).execute()
+            games = games_response.data if games_response.data else DEMO_GAMES
+        else:
+            games = DEMO_GAMES
+        
+        # Analyze user intent and filter relevant games
+        suggested_games = []
+        ai_message = ""
+        
+        # Detect sports mentioned in question
+        sports_mentioned = []
+        if "nba" in user_message or "basketball" in user_message:
+            sports_mentioned.append("nba")
+        if "nfl" in user_message or "football" in user_message:
+            sports_mentioned.append("nfl")
+        if "mlb" in user_message or "baseball" in user_message:
+            sports_mentioned.append("mlb")
+        
+        # Filter games by sport if mentioned
+        filtered_games = games
+        if sports_mentioned:
+            filtered_games = [g for g in games if g.get("sport", "").lower() in sports_mentioned]
+        
+        # Detect intent keywords
+        wants_best = any(word in user_message for word in ["best", "top", "good", "recommend", "should"])
+        wants_upset = any(word in user_message for word in ["upset", "underdog", "surprise"])
+        wants_safe = any(word in user_message for word in ["safe", "sure", "confident", "likely"])
+        wants_today = any(word in user_message for word in ["today", "tonight", "now"])
+        
+        # Get predictions for filtered games
+        for game in filtered_games[:5]:  # Limit to 5 suggestions
+            try:
+                # Generate prediction using existing engine
+                prediction = PredictionEngine.calculate_prediction(
+                    game["game_id"],
+                    game["team_a"],
+                    game["team_b"]
+                )
+                
+                # Apply filters based on user intent
+                include_game = True
+                if wants_safe and prediction.confidence < 65:
+                    include_game = False
+                if wants_upset and prediction.confidence > 60:
+                    include_game = False
+                
+                if include_game:
+                    suggested_games.append({
+                        "game_id": game["game_id"],
+                        "sport": game.get("sport", "nba"),
+                        "team_a": game["team_a"],
+                        "team_b": game["team_b"],
+                        "scheduled_date": game["scheduled_date"],
+                        "predicted_outcome": prediction.predicted_outcome,
+                        "confidence": prediction.confidence,
+                        "reasoning": prediction.reasons[:3]  # Top 3 reasons
+                    })
+            except:
+                continue
+        
+        # Construct AI response based on intent
+        if not suggested_games:
+            ai_message = "I couldn't find any games matching your criteria right now. Try asking about NBA, NFL, or check back later for more games!"
+        elif wants_safe:
+            ai_message = f"Here are {len(suggested_games)} high-confidence picks I found for you. These predictions have strong backing from multiple factors:"
+        elif wants_upset:
+            ai_message = f"Looking for underdog potential? I found {len(suggested_games)} games where the less-favored team has a fighting chance:"
+        elif wants_best:
+            ai_message = f"Based on my analysis, here are the top {len(suggested_games)} games I recommend betting on today:"
+        else:
+            ai_message = f"I analyzed the upcoming games and found {len(suggested_games)} interesting matches for you. Check out the predictions below:"
+        
+        # Store AI response in database (if connected)
+        if supabase:
+            try:
+                supabase.table("chat_messages").insert({
+                    "user_id": chat_message.user_id,
+                    "message_text": ai_message,
+                    "is_ai": True,
+                    "timestamp": timestamp
+                }).execute()
+            except:
+                pass
+        
+        return {
+            "ai_message": ai_message,
+            "suggested_games": suggested_games,
+            "timestamp": timestamp
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/chat/popular-games")
+async def get_popular_games():
+    """
+    Get popular games based on prediction confidence and recent activity.
+    Used to display a small list of trending matches below the chat.
+    """
+    try:
+        if supabase:
+            # Get games with highest confidence predictions
+            games_response = supabase.table("games").select("*").is_("result", "null").limit(6).execute()
+            games = games_response.data if games_response.data else DEMO_GAMES[:6]
+        else:
+            games = DEMO_GAMES[:6]
+        
+        popular_games = []
+        for game in games:
+            try:
+                prediction = PredictionEngine.calculate_prediction(
+                    game["game_id"],
+                    game["team_a"],
+                    game["team_b"]
+                )
+                popular_games.append({
+                    "game_id": game["game_id"],
+                    "sport": game.get("sport", "nba"),
+                    "team_a": game["team_a"],
+                    "team_b": game["team_b"],
+                    "scheduled_date": game["scheduled_date"],
+                    "predicted_outcome": prediction.predicted_outcome,
+                    "confidence": prediction.confidence
+                })
+            except:
+                continue
+        
+        # Sort by confidence (highest first)
+        popular_games.sort(key=lambda x: x["confidence"], reverse=True)
+        
+        return popular_games[:4]  # Return top 4
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/chat/history")
+async def get_chat_history(user_id: str = "anonymous", limit: int = 50):
+    """
+    Retrieve chat history for a user.
+    """
+    try:
+        if supabase:
+            response = supabase.table("chat_messages")\
+                .select("*")\
+                .eq("user_id", user_id)\
+                .order("timestamp", desc=True)\
+                .limit(limit)\
+                .execute()
+            
+            # Reverse to show oldest first
+            messages = list(reversed(response.data)) if response.data else []
+            return messages
+        else:
+            return []
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn

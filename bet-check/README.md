@@ -6,6 +6,7 @@ A full-stack AI-powered sports prediction tool built with **FastAPI** (backend),
 
 ✅ **Intelligent Predictions**: Predicts game outcomes using weighted factors (recent form, injuries, efficiency, home court advantage)  
 ✅ **Adaptive Learning**: Automatically adjusts factor weights based on prediction accuracy (0-100%)  
+✅ **AI Sports Guru**: Embedded chat interface with natural language game recommendations 🤖  
 ✅ **Confidence Scores**: Each prediction includes confidence percentage and top 3 reasons  
 ✅ **Real-time Dashboard**: Monitor accuracy metrics and factor effectiveness  
 ✅ **RESTful API**: Clean endpoints for games, predictions, and results  
@@ -22,8 +23,12 @@ bet-check/
 ├── frontend/                   # Next.js React frontend
 │   ├── pages/
 │   │   ├── index.tsx          # Home page (upcoming games list)
+│   │   ├── guru.tsx           # AI Sports Guru chat interface 🤖
 │   │   ├── game/[gameId].tsx  # Game prediction details
 │   │   └── dashboard.tsx      # Analytics & factor weights
+│   ├── components/
+│   │   ├── ChatEmbedded.tsx   # AI chat module
+│   │   └── PopularMatchesList.tsx  # Trending games
 │   ├── styles/
 │   │   └── globals.css        # Tailwind styling
 │   ├── package.json
@@ -154,11 +159,46 @@ python update_games.py
 ### Factors
 - **GET** `/factors` - Get all factors with current weights
 
+### AI Chat (New! 🤖)
+- **POST** `/chat` - Send message to AI Sports Guru, get game suggestions
+- **GET** `/chat/popular-games` - Get top trending games
+- **GET** `/chat/history?user_id={id}` - Retrieve chat history
+
 ### Health
 - **GET** `/health` - Service status check
 
 ### API Documentation
 - **GET** `/docs` - Interactive Swagger UI (FastAPI)
+
+## AI Sports Guru 🤖
+
+**NEW FEATURE:** Ask the AI about games using natural language!
+
+### What It Does
+The AI Sports Guru analyzes your questions and suggests relevant games with predictions. It understands:
+- **Intent**: "best picks", "safe bets", "potential upsets"
+- **Sport filters**: NBA, NFL, MLB
+- **Time filters**: "today's games"
+
+### Example Queries
+```
+"Show me the best NBA picks for today"
+→ Returns NBA games with 65%+ confidence scheduled today
+
+"What are the safest bets?"
+→ Returns games with 70%+ confidence (all sports)
+
+"Any NFL upsets possible?"
+→ Returns NFL games with <60% confidence (underdogs)
+
+"Top basketball games?"
+→ Returns NBA games sorted by confidence
+```
+
+### Access
+Navigate to `/guru` page or click "🤖 AI Guru" in the header.
+
+**Setup:** See [AI_GURU_SETUP.md](./AI_GURU_SETUP.md) for installation and testing instructions.
 
 ## How Adaptive Learning Works
 

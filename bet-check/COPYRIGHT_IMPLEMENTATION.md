@@ -4,7 +4,7 @@
 
 ### 1. Copyright Headers Added
 All code files now include copyright headers with:
-- Copyright (c) 2025 Jamie McNichol
+- Copyright (c) 2025 Jmenichole
 - MIT License reference
 - Portfolio link: https://jmenichole.github.io/Portfolio/
 
@@ -38,7 +38,7 @@ All code files now include copyright headers with:
   - Email: jme@tiltcheck.me (icon)
   - GitHub: github.com/jmenichole (icon)
 - **Portfolio Link:** https://jmenichole.github.io/Portfolio/
-- **Copyright Notice:** © 2025 Jamie McNichol
+- **Copyright Notice:** © 2025 Jmenichole
 
 **Styling:**
 - Dark background with neon pink accents

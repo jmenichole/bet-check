@@ -2,7 +2,7 @@
 Seed initial factors into the Supabase database.
 Run this once to populate the factors table with base weights.
 
-Copyright (c) 2025 Jamie McNichol
+Copyright (c) 2025 Jmenichole
 Licensed under MIT License
 https://jmenichole.github.io/Portfolio/
 """

@@ -1,7 +1,7 @@
 /**
  * Dashboard Page - Accuracy metrics and factor weights
  * 
- * Copyright (c) 2025 Jamie McNichol
+ * Copyright (c) 2025 Jmenichole
  * Licensed under MIT License
  * https://jmenichole.github.io/Portfolio/
  */
