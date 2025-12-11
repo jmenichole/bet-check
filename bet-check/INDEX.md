@@ -3,11 +3,12 @@ title: Bet Check - Sports Prediction Tool
 description: Complete full-stack application with adaptive learning
 ---
 
-# 🚀 Bet Check - Sports Prediction Tool (Reference)
+# 🚀 Bet Check - Sports Prediction Tool (Pruned)
 
-## ✅ Status: Fully Generated and Ready to Launch
-
-Reference only. For active development, use `README.md` and `QUICK_START_GUIDE.md`.
+For active development:
+- `README.md`
+- `QUICK_START_GUIDE.md`
+- `AI_GURU_SETUP.md`
 
 ---
 

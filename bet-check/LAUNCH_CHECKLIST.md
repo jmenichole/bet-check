@@ -1,6 +1,6 @@
-# ✅ Launch Checklist (Reference)
+# ✅ Launch Checklist (Pruned)
 
-For quick setup, use `README.md` and `QUICK_START_GUIDE.md`. This checklist is a longer reference.
+Use `README.md` and `QUICK_START_GUIDE.md` for launch steps. This checklist is archived for reference only.
 
 ---
 

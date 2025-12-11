@@ -1,10 +1,9 @@
-# 📋 BETCHECK - FINAL COMPLETION SUMMARY (Reference)
+# 📋 BETCHECK - FINAL COMPLETION SUMMARY (Pruned)
 
-**Status**: ✅ **100% COMPLETE AND READY**  
-**Date**: December 11, 2025  
-**Project**: BetCheck - AI Sports Prediction Engine
-
-Note: This is a long-form recap. For daily development, see `README.md` and `QUICK_START_GUIDE.md`.
+This recap is archived. For day-to-day work, use:
+- `README.md` (developer essentials)
+- `QUICK_START_GUIDE.md` (fast setup)
+- `AI_GURU_SETUP.md` (chat feature)
 
 ---
 

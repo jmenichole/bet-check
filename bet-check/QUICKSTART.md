@@ -1,14 +1,10 @@
-# Quick Start Guide (Reference)
+# Quick Start Guide (Pruned)
 
-For daily use, prefer `README.md` and `QUICK_START_GUIDE.md`. This file is a longer reference.
-Follow these steps to launch Bet Check locally. **Time required: 10-15 minutes**
+Use `README.md` and `QUICK_START_GUIDE.md` for active setup. This file is intentionally minimized.
 
-## Prerequisites Checklist
-
-- [ ] Python 3.8+ installed (`python --version`)
-- [ ] Node.js 16+ installed (`node -v`)
-- [ ] npm installed (`npm -v`)
-- [ ] Supabase account (free) - https://supabase.com/sign-up
+- Core setup: `README.md`
+- Fast start: `QUICK_START_GUIDE.md`
+- Chat specifics: `AI_GURU_SETUP.md`
 
 ---
 
