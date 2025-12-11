@@ -325,7 +325,10 @@ import Header from '@/components/Header'
 ```
 
 ### Factor Card with Progress
-```tsx
+
+Display factor weight with animated progress bar:
+
+```jsx
 <Card glowing={true}>
   <h3 className="text-lg font-bold text-text-primary mb-4">
     {factorName}
@@ -333,7 +336,7 @@ import Header from '@/components/Header'
   <div className="h-3 bg-dark-border rounded-full overflow-hidden">
     <div
       className="h-full bg-gradient-to-r from-neon-pink to-neon-pink-light shadow-neon-pink"
-      style={{ width: `${percentage}%` }}
+      style={ { width: `${percentage}%` } }
     />
   </div>
   <p className="text-neon-pink font-bold text-sm mt-2">
