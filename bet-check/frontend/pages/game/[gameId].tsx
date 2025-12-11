@@ -43,6 +43,9 @@ export default function GamePrediction() {
   const [prediction, setPrediction] = useState<Prediction | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showResultModal, setShowResultModal] = useState(false)
+  const [selectedResult, setSelectedResult] = useState<string | null>(null)
+  const [submittingResult, setSubmittingResult] = useState(false)
 
   useEffect(() => {
     if (!gameId) return
@@ -54,8 +57,8 @@ export default function GamePrediction() {
     try {
       setLoading(true)
 
-      // Fetch game details
-      const gameResponse = await axios.get(`${API_URL}/games?sport=nba`)
+      // Fetch game details from all sports (not just NBA)
+      const gameResponse = await axios.get(`${API_URL}/games`)
       const gameData = gameResponse.data.find((g: Game) => g.game_id === gameId)
       setGame(gameData || null)
 
@@ -81,6 +84,28 @@ export default function GamePrediction() {
       hour: '2-digit',
       minute: '2-digit',
     })
+  }
+
+  const submitResult = async () => {
+    if (!selectedResult || !game) return
+
+    try {
+      setSubmittingResult(true)
+      await axios.post(`${API_URL}/log_result`, {
+        game_id: gameId,
+        actual_outcome: selectedResult,
+      })
+
+      // Refresh data to show updated result
+      await fetchGameAndPrediction()
+      setShowResultModal(false)
+      setSelectedResult(null)
+    } catch (err) {
+      console.error('Error submitting result:', err)
+      alert('Failed to log result. Please try again.')
+    } finally {
+      setSubmittingResult(false)
+    }
   }
 
   return (
@@ -208,6 +233,47 @@ export default function GamePrediction() {
               </div>
             </Card>
 
+            {/* Result Logging Section */}
+            {!game?.result && (
+              <Card className="border-neon-pink/50 bg-neon-pink/5">
+                <div className="flex justify-between items-center gap-4">
+                  <div>
+                    <h4 className="text-lg font-bold text-text-primary mb-2">Game Completed?</h4>
+                    <p className="text-text-secondary text-sm">Log the actual result to help our prediction engine learn and improve</p>
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={() => setShowResultModal(true)}
+                  >
+                    Log Result
+                  </Button>
+                </div>
+              </Card>
+            )}
+
+            {/* Prediction Accuracy Display */}
+            {game?.result && prediction && (
+              <Card className={`border ${prediction.predicted_outcome === game.result ? 'border-green-500/50 bg-green-500/5' : 'border-red-500/50 bg-red-500/5'}`}>
+                <div className="flex items-center gap-4">
+                  <div className="text-4xl">
+                    {prediction.predicted_outcome === game.result ? '✓' : '✗'}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-text-secondary text-sm mb-2">Prediction Accuracy</p>
+                    <p className={`text-lg font-bold ${prediction.predicted_outcome === game.result ? 'text-green-400' : 'text-red-400'}`}>
+                      {prediction.predicted_outcome === game.result ? 'CORRECT' : 'INCORRECT'}
+                    </p>
+                    <p className="text-text-secondary text-sm mt-2">
+                      Predicted: <span className="text-text-primary font-semibold">{prediction.predicted_outcome}</span>
+                      {' | '}
+                      Actual: <span className="text-text-primary font-semibold">{game.result}</span>
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
+
             {/* Factor Analysis */}
             <Card glowing={true}>
               <h3 className="text-2xl font-bold text-text-primary mb-8">
@@ -288,6 +354,73 @@ export default function GamePrediction() {
                 </Button>
               </Link>
             </div>
+          </div>
+        )}
+
+        {/* Result Modal */}
+        {showResultModal && game && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <Card className="w-full max-w-md border-neon-pink">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-text-primary">Log Game Result</h3>
+                <button
+                  onClick={() => setShowResultModal(false)}
+                  className="text-text-secondary hover:text-neon-pink transition-colors text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <p className="text-text-secondary mb-6">
+                Select the actual winner of the <span className="text-text-primary font-semibold">{game.team_a} vs {game.team_b}</span> game
+              </p>
+
+              <div className="space-y-3 mb-8">
+                {/* Team A Option */}
+                <button
+                  onClick={() => setSelectedResult(game.team_a)}
+                  className={`w-full p-4 rounded-lg border-2 transition-all duration-300 font-semibold ${
+                    selectedResult === game.team_a
+                      ? 'bg-neon-pink border-neon-pink text-dark-bg'
+                      : 'bg-dark-card border-dark-border text-text-primary hover:border-neon-pink'
+                  }`}
+                >
+                  {game.team_a}
+                </button>
+
+                {/* Team B Option */}
+                <button
+                  onClick={() => setSelectedResult(game.team_b)}
+                  className={`w-full p-4 rounded-lg border-2 transition-all duration-300 font-semibold ${
+                    selectedResult === game.team_b
+                      ? 'bg-neon-pink border-neon-pink text-dark-bg'
+                      : 'bg-dark-card border-dark-border text-text-primary hover:border-neon-pink'
+                  }`}
+                >
+                  {game.team_b}
+                </button>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onClick={() => setShowResultModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={submitResult}
+                  disabled={!selectedResult || submittingResult}
+                  className="flex-1"
+                >
+                  {submittingResult ? 'Saving...' : 'Confirm Result'}
+                </Button>
+              </div>
+            </Card>
           </div>
         )}
       </main>

@@ -37,6 +37,11 @@ export default function Header({ title = "BetCheck", subtitle, showNav = true }:
                   Games
                 </span>
               </Link>
+              <Link href="/past-games">
+                <span className="px-4 py-2 rounded-lg text-white hover:text-neon-pink hover:bg-gray-800/50 transition-all duration-300">
+                  History
+                </span>
+              </Link>
               <Link href="/guru">
                 <span className="px-4 py-2 rounded-lg text-white hover:text-neon-pink hover:bg-gray-800/50 transition-all duration-300">
                   AI Guru
