@@ -46,6 +46,7 @@ export default function GamePrediction() {
   const [showResultModal, setShowResultModal] = useState(false)
   const [selectedResult, setSelectedResult] = useState<string | null>(null)
   const [submittingResult, setSubmittingResult] = useState(false)
+  const [verificationType, setVerificationType] = useState<'auto' | 'manual' | null>(null)
 
   useEffect(() => {
     if (!gameId) return
@@ -65,6 +66,16 @@ export default function GamePrediction() {
       // Fetch prediction
       const predResponse = await axios.get(`${API_URL}/predict/${gameId}`)
       setPrediction(predResponse.data)
+
+      // Check if result was auto-verified or manual
+      if (gameData?.result) {
+        try {
+          const statusResponse = await axios.get(`${API_URL}/games/status/${gameId}`)
+          setVerificationType(statusResponse.data.verification_type)
+        } catch {
+          setVerificationType('unknown')
+        }
+      }
 
       setError('')
     } catch (err) {
@@ -255,20 +266,37 @@ export default function GamePrediction() {
             {/* Prediction Accuracy Display */}
             {game?.result && prediction && (
               <Card className={`border ${prediction.predicted_outcome === game.result ? 'border-green-500/50 bg-green-500/5' : 'border-red-500/50 bg-red-500/5'}`}>
-                <div className="flex items-center gap-4">
-                  <div className="text-4xl">
-                    {prediction.predicted_outcome === game.result ? '✓' : '✗'}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className="text-4xl">
+                      {prediction.predicted_outcome === game.result ? '✓' : '✗'}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-text-secondary text-sm mb-2">Prediction Accuracy</p>
+                      <p className={`text-lg font-bold ${prediction.predicted_outcome === game.result ? 'text-green-400' : 'text-red-400'}`}>
+                        {prediction.predicted_outcome === game.result ? 'CORRECT' : 'INCORRECT'}
+                      </p>
+                      <p className="text-text-secondary text-sm mt-2">
+                        Predicted: <span className="text-text-primary font-semibold">{prediction.predicted_outcome}</span>
+                        {' | '}
+                        Actual: <span className="text-text-primary font-semibold">{game.result}</span>
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-text-secondary text-sm mb-2">Prediction Accuracy</p>
-                    <p className={`text-lg font-bold ${prediction.predicted_outcome === game.result ? 'text-green-400' : 'text-red-400'}`}>
-                      {prediction.predicted_outcome === game.result ? 'CORRECT' : 'INCORRECT'}
-                    </p>
-                    <p className="text-text-secondary text-sm mt-2">
-                      Predicted: <span className="text-text-primary font-semibold">{prediction.predicted_outcome}</span>
-                      {' | '}
-                      Actual: <span className="text-text-primary font-semibold">{game.result}</span>
-                    </p>
+                  
+                  {/* Verification Badge */}
+                  <div className="text-right">
+                    <div className="inline-block px-3 py-1 rounded-full text-xs font-semibold border">
+                      {verificationType === 'auto' ? (
+                        <div className="bg-blue-500/20 border-blue-500/50 text-blue-300">
+                          🤖 Auto-Verified
+                        </div>
+                      ) : verificationType === 'manual' ? (
+                        <div className="bg-purple-500/20 border-purple-500/50 text-purple-300">
+                          👤 Manually Verified
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </Card>
