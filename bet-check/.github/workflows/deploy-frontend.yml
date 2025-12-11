@@ -35,6 +35,7 @@ jobs:
       - name: Build Next.js app
         working-directory: ./frontend
         env:
+          NODE_ENV: production
           NEXT_PUBLIC_API_URL: ${{ secrets.BACKEND_URL || 'https://bet-check-backend.onrender.com' }}
         run: npm run build
       
