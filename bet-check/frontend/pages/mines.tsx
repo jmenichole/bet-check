@@ -283,7 +283,7 @@ export default function Mines() {
                         className={`
                           w-12 h-12 rounded border transition-all font-bold text-lg relative
                           disabled:cursor-not-allowed
-                          ${getTileColor(tile, pred)}
+                          ${getTileColor(tile, pred || null)}
                           ${!tile.revealed && gameStatus !== 'busted' ? 'cursor-pointer hover:scale-105' : ''}
                           ${isTopPick && !tile.revealed ? 'ring-2 ring-green-400 ring-offset-2 ring-offset-dark-bg animate-pulse' : ''}
                         `}

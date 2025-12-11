@@ -9,12 +9,12 @@
 import Link from 'next/link'
 
 interface HeaderProps {
-  title: string
+  title?: string
   subtitle?: string
   showNav?: boolean
 }
 
-export default function Header({ title, subtitle, showNav = true }: HeaderProps) {
+export default function Header({ title = "BetCheck", subtitle, showNav = true }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 bg-dark-bg/95 backdrop-blur border-b border-gray-800 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -22,7 +22,7 @@ export default function Header({ title, subtitle, showNav = true }: HeaderProps)
           <div>
             <Link href="/">
               <h1 className="text-2xl sm:text-3xl font-bold text-white hover:text-neon-pink transition-colors duration-300">
-                BetCheck
+                {title}
               </h1>
             </Link>
             {subtitle && (

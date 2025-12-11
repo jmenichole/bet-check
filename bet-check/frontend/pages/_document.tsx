@@ -1,12 +1,11 @@
-import Document, {
+import {
   Html,
   Head,
   Main,
   NextScript,
-  type DocumentProps,
 } from 'next/document'
 
-export default function MyDocument(props: DocumentProps) {
+export default function MyDocument() {
   return (
     <Html lang="en">
       <Head>

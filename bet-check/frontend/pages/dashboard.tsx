@@ -7,7 +7,6 @@
  */
 
 import axios from 'axios'
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import Header from '@/components/Header'
 import Card from '@/components/Card'
