@@ -25,10 +25,18 @@ class ESPNResultFetcher:
         self.processed_games = set()  # Track already processed results
         self.running = False
     
-    def fetch_game_result(self, sport: str, game_id: str) -> Optional[str]:
+    def fetch_game_result(self, sport: str, game_id: str) -> Optional[dict]:
         """
         Fetch specific game result from ESPN API
-        Returns winner name or None if game not found/not completed
+        Returns dict with winner name, scores, or None if game not found/not completed
+        Format: {
+            "winner": "Team Name",
+            "team_a": "Team A Name",
+            "team_b": "Team B Name", 
+            "score_a": 95,
+            "score_b": 87,
+            "status": "completed"
+        }
         """
         try:
             if sport not in self.sports_endpoints:
@@ -48,14 +56,30 @@ class ESPNResultFetcher:
                 # Check if game is complete
                 status = competition.get("status", {})
                 if status.get("type", {}).get("completed", False):
-                    # Find winner
+                    # Get team info and scores
                     competitors = competition.get("competitors", [])
                     if len(competitors) >= 2:
-                        # Winner is competitor with higher score
+                        team_a = competitors[0].get("team", {}).get("displayName", "Unknown")
+                        team_b = competitors[1].get("team", {}).get("displayName", "Unknown")
+                        score_a = int(competitors[0].get("score", 0)) if competitors[0].get("score") else 0
+                        score_b = int(competitors[1].get("score", 0)) if competitors[1].get("score") else 0
+                        
+                        # Determine winner
                         if competitors[0].get("winner"):
-                            return competitors[0].get("team", {}).get("displayName", "Unknown")
+                            winner = team_a
                         elif competitors[1].get("winner"):
-                            return competitors[1].get("team", {}).get("displayName", "Unknown")
+                            winner = team_b
+                        else:
+                            return None
+                        
+                        return {
+                            "winner": winner,
+                            "team_a": team_a,
+                            "team_b": team_b,
+                            "score_a": score_a,
+                            "score_b": score_b,
+                            "status": "completed"
+                        }
                     
                     return None
             
@@ -64,10 +88,11 @@ class ESPNResultFetcher:
             print(f"Error fetching result for {game_id}: {e}")
             return None
     
-    def fetch_daily_results(self, lookback_days: int = 2) -> Dict[str, str]:
+    def fetch_daily_results(self, lookback_days: int = 2) -> dict:
         """
         Fetch all completed games from last N days
-        Returns dict of {game_id: winning_team}
+        Returns dict of {game_id: result_data}
+        result_data format: {"winner": "X", "team_a": "A", "team_b": "B", "score_a": 95, "score_b": 87}
         """
         results = {}
         
@@ -95,17 +120,30 @@ class ESPNResultFetcher:
                                         if len(competitors) >= 2:
                                             game_id = f"{sport_key}_{event.get('id')}"
                                             
+                                            # Get scores and teams
+                                            team_a = competitors[0].get("team", {}).get("displayName", "Unknown")
+                                            team_b = competitors[1].get("team", {}).get("displayName", "Unknown")
+                                            score_a = int(competitors[0].get("score", 0)) if competitors[0].get("score") else 0
+                                            score_b = int(competitors[1].get("score", 0)) if competitors[1].get("score") else 0
+                                            
                                             # Find winner
                                             if competitors[0].get("winner"):
-                                                winner = competitors[0].get("team", {}).get("displayName", "Unknown")
+                                                winner = team_a
                                             elif competitors[1].get("winner"):
-                                                winner = competitors[1].get("team", {}).get("displayName", "Unknown")
+                                                winner = team_b
                                             else:
                                                 continue
                                             
                                             # Only process if not already processed
                                             if game_id not in self.processed_games:
-                                                results[game_id] = winner
+                                                results[game_id] = {
+                                                    "winner": winner,
+                                                    "team_a": team_a,
+                                                    "team_b": team_b,
+                                                    "score_a": score_a,
+                                                    "score_b": score_b,
+                                                    "status": "completed"
+                                                }
                                                 self.processed_games.add(game_id)
                                 except Exception as e:
                                     continue

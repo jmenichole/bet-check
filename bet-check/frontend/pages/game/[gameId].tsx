@@ -43,10 +43,9 @@ export default function GamePrediction() {
   const [prediction, setPrediction] = useState<Prediction | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [showResultModal, setShowResultModal] = useState(false)
-  const [selectedResult, setSelectedResult] = useState<string | null>(null)
-  const [submittingResult, setSubmittingResult] = useState(false)
-  const [verificationType, setVerificationType] = useState<'auto' | 'manual' | null>(null)
+  const [showVerifyModal, setShowVerifyModal] = useState(false)
+  const [verifying, setVerifying] = useState(false)
+  const [verificationType, setVerificationType] = useState<'auto' | 'manual' | 'auto_verified' | 'auto_rejected' | null>(null)
 
   useEffect(() => {
     if (!gameId) return
@@ -67,7 +66,7 @@ export default function GamePrediction() {
       const predResponse = await axios.get(`${API_URL}/predict/${gameId}`)
       setPrediction(predResponse.data)
 
-      // Check if result was auto-verified or manual
+      // Check if result was auto-fetched and needs verification
       if (gameData?.result) {
         try {
           const statusResponse = await axios.get(`${API_URL}/games/status/${gameId}`)
@@ -98,10 +97,10 @@ export default function GamePrediction() {
   }
 
   const submitResult = async () => {
-    if (!selectedResult || !game) return
+    if (!game) return
 
     try {
-      setSubmittingResult(true)
+      setVerifying(true)
       await axios.post(`${API_URL}/log_result`, {
         game_id: gameId,
         actual_outcome: selectedResult,
@@ -115,7 +114,25 @@ export default function GamePrediction() {
       console.error('Error submitting result:', err)
       alert('Failed to log result. Please try again.')
     } finally {
-      setSubmittingResult(false)
+      setVerifying(false)
+    }
+  }
+
+  const verifyScore = async (isCorrect: boolean) => {
+    if (!gameId) return
+
+    try {
+      setVerifying(true)
+      await axios.post(`${API_URL}/verify_result/${gameId}?is_correct=${isCorrect}`)
+
+      // Refresh data to show updated verification status
+      await fetchGameAndPrediction()
+      setShowVerifyModal(false)
+    } catch (err) {
+      console.error('Error verifying result:', err)
+      alert('Failed to verify result. Please try again.')
+    } finally {
+      setVerifying(false)
     }
   }
 
@@ -244,20 +261,20 @@ export default function GamePrediction() {
               </div>
             </Card>
 
-            {/* Result Logging Section */}
+            {/* Result Verification Section */}
             {!game?.result && (
               <Card className="border-neon-pink/50 bg-neon-pink/5">
                 <div className="flex justify-between items-center gap-4">
                   <div>
                     <h4 className="text-lg font-bold text-text-primary mb-2">Game Completed?</h4>
-                    <p className="text-text-secondary text-sm">Log the actual result to help our prediction engine learn and improve</p>
+                    <p className="text-text-secondary text-sm">Help us verify the result to improve our prediction engine</p>
                   </div>
                   <Button
                     variant="primary"
                     size="md"
-                    onClick={() => setShowResultModal(true)}
+                    onClick={() => setShowVerifyModal(true)}
                   >
-                    Log Result
+                    Verify Result
                   </Button>
                 </div>
               </Card>
@@ -385,67 +402,71 @@ export default function GamePrediction() {
           </div>
         )}
 
-        {/* Result Modal */}
-        {showResultModal && game && (
+        {/* Verify Result Modal */}
+        {showVerifyModal && game && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <Card className="w-full max-w-md border-neon-pink">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-text-primary">Log Game Result</h3>
+                <h3 className="text-2xl font-bold text-text-primary">Verify Game Result</h3>
                 <button
-                  onClick={() => setShowResultModal(false)}
+                  onClick={() => setShowVerifyModal(false)}
                   className="text-text-secondary hover:text-neon-pink transition-colors text-2xl"
                 >
                   ✕
                 </button>
               </div>
 
-              <p className="text-text-secondary mb-6">
-                Select the actual winner of the <span className="text-text-primary font-semibold">{game.team_a} vs {game.team_b}</span> game
-              </p>
-
-              <div className="space-y-3 mb-8">
-                {/* Team A Option */}
-                <button
-                  onClick={() => setSelectedResult(game.team_a)}
-                  className={`w-full p-4 rounded-lg border-2 transition-all duration-300 font-semibold ${
-                    selectedResult === game.team_a
-                      ? 'bg-neon-pink border-neon-pink text-dark-bg'
-                      : 'bg-dark-card border-dark-border text-text-primary hover:border-neon-pink'
-                  }`}
-                >
-                  {game.team_a}
-                </button>
-
-                {/* Team B Option */}
-                <button
-                  onClick={() => setSelectedResult(game.team_b)}
-                  className={`w-full p-4 rounded-lg border-2 transition-all duration-300 font-semibold ${
-                    selectedResult === game.team_b
-                      ? 'bg-neon-pink border-neon-pink text-dark-bg'
-                      : 'bg-dark-card border-dark-border text-text-primary hover:border-neon-pink'
-                  }`}
-                >
-                  {game.team_b}
-                </button>
+              <div className="mb-8">
+                <p className="text-text-secondary text-sm mb-4">ESPN fetched score:</p>
+                <div className="bg-dark-card border border-dark-border rounded-lg p-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="text-center flex-1">
+                      <p className="text-text-primary font-bold text-lg mb-2">{game.team_a}</p>
+                      {game.result && game.result.includes('-') ? (
+                        <p className="text-2xl font-bold text-neon-pink">
+                          {game.result.split('-')[0].trim()}
+                        </p>
+                      ) : (
+                        <p className="text-text-secondary text-sm">Loading score...</p>
+                      )}
+                    </div>
+                    <div className="text-text-secondary font-semibold text-lg">vs</div>
+                    <div className="text-center flex-1">
+                      <p className="text-text-primary font-bold text-lg mb-2">{game.team_b}</p>
+                      {game.result && game.result.includes('-') ? (
+                        <p className="text-2xl font-bold text-neon-pink">
+                          {game.result.split('-')[1].trim()}
+                        </p>
+                      ) : (
+                        <p className="text-text-secondary text-sm">Loading score...</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              <p className="text-text-secondary text-sm mb-8">
+                Is this score correct?
+              </p>
 
               <div className="flex gap-3">
                 <Button
                   variant="secondary"
                   size="md"
-                  onClick={() => setShowResultModal(false)}
+                  onClick={() => verifyScore(false)}
+                  disabled={verifying}
                   className="flex-1"
                 >
-                  Cancel
+                  {verifying ? 'Processing...' : '✗ Incorrect'}
                 </Button>
                 <Button
                   variant="primary"
                   size="md"
-                  onClick={submitResult}
-                  disabled={!selectedResult || submittingResult}
+                  onClick={() => verifyScore(true)}
+                  disabled={verifying}
                   className="flex-1"
                 >
-                  {submittingResult ? 'Saving...' : 'Confirm Result'}
+                  {verifying ? 'Processing...' : '✓ Verify'}
                 </Button>
               </div>
             </Card>

@@ -173,42 +173,40 @@ DEMO_GAMES = fetch_live_games() or [
 
 result_fetcher = ESPNResultFetcher()
 
-def auto_update_game_result(game_id: str, winner: str):
+def auto_update_game_result(game_id: str, result_data: dict):
     """
     Callback function when ESPN fetches a result automatically
     Updates game in DEMO_GAMES and triggers weight adaptation
+    result_data: {"winner": "X", "team_a": "A", "team_b": "B", "score_a": 95, "score_b": 87}
     """
     global DEMO_GAMES
     
     # Update game in memory
     for game in DEMO_GAMES:
         if game["game_id"] == game_id:
-            game["result"] = winner
-            print(f"✅ Auto-updated {game_id}: {winner}")
+            game["result"] = result_data["winner"]
+            game["score_a"] = result_data.get("score_a")
+            game["score_b"] = result_data.get("score_b")
+            game["verified"] = False  # Mark as unverified until user confirms
+            print(f"✅ Auto-fetched {game_id}: {result_data['team_a']} {result_data['score_a']} - {result_data['score_b']} {result_data['team_b']}")
             break
     
     # Update database if available
     if supabase:
         try:
             supabase.table("games").update({
-                "result": winner,
+                "result": result_data["winner"],
+                "score_a": result_data.get("score_a"),
+                "score_b": result_data.get("score_b"),
+                "verified": False,  # Wait for user confirmation
                 "updated_at": datetime.utcnow().isoformat()
             }).eq("game_id", game_id).execute()
             print(f"📝 Saved to database: {game_id}")
         except Exception as e:
             print(f"Warning: Could not save to database: {e}")
     
-    # Trigger adaptive learning weight update
-    try:
-        # This simulates the log_result endpoint being called
-        # Find the game to get both teams
-        game = next((g for g in DEMO_GAMES if g["game_id"] == game_id), None)
-        if game:
-            # Determine if prediction was correct (would need to fetch stored prediction)
-            # For now, we're just logging the result for future accuracy calculation
-            print(f"🧠 Result logged for adaptive learning: {game_id}")
-    except Exception as e:
-        print(f"Warning: Could not trigger learning update: {e}")
+    # DO NOT trigger learning yet - wait for user verification
+    print(f"⏳ Awaiting verification for {game_id}")
 
 # Start background result fetcher (checks every 6 hours)
 print("🔄 Starting automated ESPN result fetcher...")
@@ -620,6 +618,7 @@ async def log_result(result_log: ResultLog):
         for game in DEMO_GAMES:
             if game["game_id"] == result_log.game_id:
                 game["result"] = result_log.actual_outcome
+                game["verified"] = True
                 break
         
         # Store result
@@ -659,10 +658,80 @@ async def log_result(result_log: ResultLog):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/verify_result/{game_id}")
+async def verify_result(game_id: str, is_correct: bool):
+    """
+    Verify that ESPN-fetched result is accurate
+    
+    Params:
+        game_id: Game ID
+        is_correct: True if ESPN result is accurate, False if incorrect
+    
+    Returns:
+        Confirmation with adaptive learning status
+    """
+    try:
+        global DEMO_GAMES
+        
+        # Find game
+        game = next((g for g in DEMO_GAMES if g["game_id"] == game_id), None)
+        if not game:
+            raise HTTPException(status_code=404, detail="Game not found")
+        
+        if not game.get("result"):
+            raise HTTPException(status_code=400, detail="No result to verify for this game")
+        
+        # Mark as verified
+        game["verified"] = True
+        
+        # Only trigger learning if ESPN result was correct
+        if is_correct:
+            print(f"✅ Result verified as CORRECT: {game_id}")
+            
+            # Trigger adaptive learning
+            PredictionEngine.update_weights(game_id, game["result"])
+            
+            if supabase:
+                supabase.table("results").insert({
+                    "game_id": game_id,
+                    "actual_outcome": game["result"],
+                    "verification_type": "auto_verified",
+                    "created_at": datetime.utcnow().isoformat()
+                }).execute()
+            
+            return {
+                "status": "success",
+                "message": f"Result verified for {game_id}",
+                "weights_updated": True,
+                "verification_type": "auto_verified"
+            }
+        else:
+            print(f"❌ Result marked as INCORRECT: {game_id}")
+            
+            if supabase:
+                supabase.table("results").insert({
+                    "game_id": game_id,
+                    "actual_outcome": game["result"],
+                    "verification_type": "auto_rejected",
+                    "created_at": datetime.utcnow().isoformat()
+                }).execute()
+            
+            return {
+                "status": "rejected",
+                "message": f"Result for {game_id} marked as incorrect",
+                "weights_updated": False,
+                "verification_type": "auto_rejected"
+            }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/games/status/{game_id}")
 async def get_game_status(game_id: str):
     """
-    Get game status including whether result was auto-fetched or manually verified
+    Get game status including result and verification status
     """
     try:
         # Find game
@@ -671,22 +740,30 @@ async def get_game_status(game_id: str):
             raise HTTPException(status_code=404, detail="Game not found")
         
         verification_type = None
-        if supabase and game.get("result"):
-            try:
-                result_response = supabase.table("results").select("verification_type").eq(
-                    "game_id", game_id
-                ).order("created_at", desc=True).limit(1).execute()
-                
-                if result_response.data:
-                    verification_type = result_response.data[0].get("verification_type", "auto")
-            except:
-                verification_type = "auto"  # Default to auto if can't determine
+        if game.get("result"):
+            if supabase:
+                try:
+                    result_response = supabase.table("results").select("verification_type").eq(
+                        "game_id", game_id
+                    ).order("created_at", desc=True).limit(1).execute()
+                    
+                    if result_response.data:
+                        verification_type = result_response.data[0].get("verification_type", "auto")
+                except:
+                    verification_type = "auto" if not game.get("verified") else "unknown"
+            else:
+                verification_type = "auto" if not game.get("verified") else "unknown"
         
         return {
             "game_id": game_id,
             "has_result": game.get("result") is not None,
             "result": game.get("result"),
-            "verification_type": verification_type or ("auto" if game.get("result") else None)
+            "team_a": game.get("team_a"),
+            "team_b": game.get("team_b"),
+            "score_a": game.get("score_a"),
+            "score_b": game.get("score_b"),
+            "verified": game.get("verified", False),
+            "verification_type": verification_type
         }
     
     except HTTPException:
