@@ -72,7 +72,7 @@ export default function GamePrediction() {
           const statusResponse = await axios.get(`${API_URL}/games/status/${gameId}`)
           setVerificationType(statusResponse.data.verification_type)
         } catch {
-          setVerificationType('unknown')
+          setVerificationType(null)
         }
       }
 
@@ -94,28 +94,6 @@ export default function GamePrediction() {
       hour: '2-digit',
       minute: '2-digit',
     })
-  }
-
-  const submitResult = async () => {
-    if (!game) return
-
-    try {
-      setVerifying(true)
-      await axios.post(`${API_URL}/log_result`, {
-        game_id: gameId,
-        actual_outcome: selectedResult,
-      })
-
-      // Refresh data to show updated result
-      await fetchGameAndPrediction()
-      setShowResultModal(false)
-      setSelectedResult(null)
-    } catch (err) {
-      console.error('Error submitting result:', err)
-      alert('Failed to log result. Please try again.')
-    } finally {
-      setVerifying(false)
-    }
   }
 
   const verifyScore = async (isCorrect: boolean) => {
