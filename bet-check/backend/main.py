@@ -16,6 +16,10 @@ from dotenv import load_dotenv
 import numpy as np
 from datetime import datetime
 from supabase import create_client, Client
+from backend.mines import get_predictor, update_prediction_accuracy, demo_games as mines_demo_games
+
+# Demo storage for games
+demo_games = {}
 
 # Load environment variables
 load_dotenv()
@@ -99,11 +103,45 @@ DEMO_FACTORS = [
     {"factor_id": 5, "name": "Home Court Advantage", "base_weight": 0.20, "current_weight": 0.20, "min_weight": 0.05, "max_weight": 0.35},
 ]
 
-DEMO_GAMES = [
-    {"game_id": "nba_2025_01_15_lakers_celtics", "sport": "nba", "team_a": "Los Angeles Lakers", "team_b": "Boston Celtics", "scheduled_date": "2025-01-15", "result": None},
-    {"game_id": "nba_2025_01_16_warriors_suns", "sport": "nba", "team_a": "Golden State Warriors", "team_b": "Phoenix Suns", "scheduled_date": "2025-01-16", "result": None},
-    {"game_id": "nba_2025_01_17_heat_knicks", "sport": "nba", "team_a": "Miami Heat", "team_b": "New York Knicks", "scheduled_date": "2025-01-17", "result": None},
-    {"game_id": "nba_2025_01_18_nuggets_kings", "sport": "nba", "team_a": "Denver Nuggets", "team_b": "Sacramento Kings", "scheduled_date": "2025-01-18", "result": None},
+# Fetch live games from ESPN on startup
+def fetch_live_games():
+    """Fetch current NBA games from ESPN API"""
+    try:
+        import requests
+        from datetime import timedelta
+        
+        games = []
+        for days_ahead in range(3):  # Next 3 days
+            target_date = datetime.now() + timedelta(days=days_ahead)
+            date_str = target_date.strftime("%Y%m%d")
+            url = f"http://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={date_str}"
+            
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                for event in data.get("events", []):
+                    try:
+                        comps = event.get("competitions", [{}])[0]
+                        competitors = comps.get("competitors", [])
+                        if len(competitors) >= 2:
+                            games.append({
+                                "game_id": f"nba_{event.get('id')}",
+                                "sport": "nba",
+                                "team_a": competitors[0].get("team", {}).get("displayName", "Unknown"),
+                                "team_b": competitors[1].get("team", {}).get("displayName", "Unknown"),
+                                "scheduled_date": event.get("date", "")[:10],
+                                "result": None
+                            })
+                    except:
+                        continue
+        return games if games else None
+    except:
+        return None
+
+DEMO_GAMES = fetch_live_games() or [
+    {"game_id": "nba_demo_1", "sport": "nba", "team_a": "Los Angeles Lakers", "team_b": "Boston Celtics", "scheduled_date": datetime.now().strftime("%Y-%m-%d"), "result": None},
+    {"game_id": "nba_demo_2", "sport": "nba", "team_a": "Golden State Warriors", "team_b": "Phoenix Suns", "scheduled_date": datetime.now().strftime("%Y-%m-%d"), "result": None},
+    {"game_id": "nba_demo_3", "sport": "nba", "team_a": "Miami Heat", "team_b": "Milwaukee Bucks", "scheduled_date": datetime.now().strftime("%Y-%m-%d"), "result": None},
 ]
 
 # ==================== Core Prediction Logic ====================
@@ -288,6 +326,165 @@ async def list_games(sport: Optional[str] = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ==================== MINES ENDPOINTS ====================
+
+@app.post("/mines/game/create")
+async def create_mines_game(grid_size: int = 5, num_bombs: int = None):
+    """Create new mines game"""
+    try:
+        predictor = get_predictor()
+        game = predictor.create_game(grid_size, num_bombs)
+        
+        # Store in demo storage
+        demo_games[game["game_id"]] = {
+            **game,
+            "revealed_tiles": []
+        }
+        
+        return game
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/mines/game/{game_id}")
+async def get_mines_game(game_id: str):
+    """Get mines game state"""
+    try:
+        if game_id not in demo_games:
+            raise HTTPException(status_code=404, detail="Game not found")
+        
+        game = demo_games[game_id]
+        predictor = get_predictor()
+        stats = predictor.calculate_game_stats(
+            game_id,
+            game["revealed_tiles"],
+            game["grid_size"],
+            game["num_bombs"],
+        )
+        
+        return {
+            **game,
+            "stats": stats
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/mines/predict/{game_id}")
+async def predict_mines_tiles(game_id: str):
+    """Get tile predictions for mines game"""
+    try:
+        if game_id not in demo_games:
+            raise HTTPException(status_code=404, detail="Game not found")
+        
+        game = demo_games[game_id]
+        predictor = get_predictor()
+        predictions = predictor.get_tile_predictions(
+            game_id,
+            game["grid_size"],
+            game["revealed_tiles"],
+            game["num_bombs"],
+        )
+        
+        return {
+            "game_id": game_id,
+            "total_predictions": len(predictions),
+            "tiles": predictions[:20],
+            "timestamp": datetime.now().isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/mines/click/{game_id}")
+async def record_mines_click(game_id: str, x: int, y: int, is_safe: bool):
+    """Record a tile click and update game with adaptive learning"""
+    try:
+        if game_id not in demo_games:
+            raise HTTPException(status_code=404, detail="Game not found")
+        
+        game = demo_games[game_id]
+        
+        # Check if we had a prediction for this tile
+        predictor = get_predictor()
+        old_predictions = predictor.get_tile_predictions(
+            game_id,
+            game["grid_size"],
+            game["revealed_tiles"],
+            game["num_bombs"],
+        )
+        
+        tile_prediction = next((p for p in old_predictions if p["x"] == x and p["y"] == y), None)
+        
+        # Update adaptive learning weights based on outcome
+        if tile_prediction:
+            predicted_safe = tile_prediction["safe_probability"] > 0.5
+            was_correct = (predicted_safe and is_safe) or (not predicted_safe and not is_safe)
+            update_prediction_accuracy(was_correct, tile_prediction["safe_probability"])
+        
+        # Add tile to revealed
+        game["revealed_tiles"].append({
+            "x": x,
+            "y": y,
+            "is_bomb": not is_safe,
+            "clicked_at": datetime.now().isoformat()
+        })
+        
+        # Update game status
+        if not is_safe:
+            game["status"] = "busted"
+        
+        # Get updated predictions
+        predictions = predictor.get_tile_predictions(
+            game_id,
+            game["grid_size"],
+            game["revealed_tiles"],
+            game["num_bombs"],
+        )
+        stats = predictor.calculate_game_stats(
+            game_id,
+            game["revealed_tiles"],
+            game["grid_size"],
+            game["num_bombs"],
+        )
+        
+        return {
+            "game_id": game_id,
+            "click_result": "SAFE" if is_safe else "BOMB",
+            "game_status": game["status"],
+            "stats": stats,
+            "next_predictions": predictions[:10]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/mines/analytics")
+async def get_mines_analytics():
+    """Get mines game analytics"""
+    try:
+        if not demo_games:
+            return {
+                "total_games": 0,
+                "active_games": 0,
+                "avg_prediction_accuracy": 0
+            }
+        
+        total = len(demo_games)
+        active = sum(1 for g in demo_games.values() if g["status"] == "active")
+        
+        return {
+            "total_games": total,
+            "active_games": active,
+            "avg_prediction_accuracy": 0.75,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 @app.get("/predict/{game_id}", response_model=Prediction)
 async def get_prediction(game_id: str):
     """

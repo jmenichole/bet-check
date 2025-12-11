@@ -8,13 +8,17 @@
 
 import '@/styles/globals.css'
 import type { AppProps } from 'next/app'
-import Footer from '@/components/Footer'
+import Head from 'next/head'
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <div className="min-h-screen flex flex-col bg-dark-bg">
-      <Component {...pageProps} />
-      <Footer />
-    </div>
+    <>
+      <Head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      </Head>
+      <div className="min-h-screen flex flex-col bg-dark-bg">
+        <Component {...pageProps} />
+      </div>
+    </>
   )
 }

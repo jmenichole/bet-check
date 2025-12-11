@@ -25,10 +25,10 @@ docker compose up --build
 
 # 5. Wait for services to start
 # Backend: http://localhost:8000
-# Frontend: http://localhost:3000
+# Frontend: http://localhost:9000
 ```
 
-**That's it!** Visit http://localhost:3000 in your browser.
+**That's it!** Visit http://localhost:9000 in your browser.
 
 ---
 
@@ -68,7 +68,7 @@ npm run dev
 ```
 
 ### Access Application
-- **Frontend**: http://localhost:3000
+- **Frontend**: http://localhost:9000
 - **Backend API**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
 
@@ -92,17 +92,17 @@ python test_api.py
 
 ## 🎮 Using the Application
 
-### 1. **Home Page** (http://localhost:3000)
+### 1. **Home Page** (http://localhost:9000)
 - View upcoming games
 - Filter by sport
 - Click game for detailed prediction
 
-### 2. **Game Detail Page** (http://localhost:3000/game/[gameId])
+### 2. **Game Detail Page** (http://localhost:9000/game/[gameId])
 - View detailed prediction
 - See factor contributions
 - Log actual game result
 
-### 3. **Dashboard** (http://localhost:3000/dashboard)
+### 3. **Dashboard** (http://localhost:9000/dashboard)
 - View prediction accuracy
 - See current factor weights
 - Track improvement over time

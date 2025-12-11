@@ -24,6 +24,15 @@ interface Game {
   result: string | null
 }
 
+const SUGGESTED_QUESTIONS = [
+  "Which team has the best recent form?",
+  "Who's more likely to win this matchup?",
+  "What factors favor the home team?",
+  "How accurate are recent predictions?",
+  "What's the prediction confidence?",
+  "Compare offensive vs defensive stats",
+]
+
 export default function Home() {
   const [games, setGames] = useState<Game[]>([])
   const [loading, setLoading] = useState(true)
@@ -74,12 +83,40 @@ export default function Home() {
           </p>
         </div>
 
+        {/* Suggested Questions */}
+        {!loading && games.length > 0 && (
+          <div className="mb-12">
+            <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-4">
+              Common Questions
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {SUGGESTED_QUESTIONS.map((question, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    // Store question in session/context for future use
+                    console.log('Clicked question:', question)
+                  }}
+                  className="text-left p-3 rounded-lg border border-gray-700 bg-dark-bg/50 hover:bg-gray-800 hover:border-neon-pink transition-all duration-300 group"
+                >
+                  <p className="text-white group-hover:text-neon-pink text-sm font-medium transition-colors">
+                    {question}
+                  </p>
+                  <p className="text-xs text-text-secondary/60 mt-1 group-hover:text-neon-pink/60">
+                    Click to explore
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Loading State */}
         {loading && (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <div className="inline-block">
-                <div className="w-12 h-12 border-2 border-neon-pink border-t-transparent rounded-full animate-spin mb-4"></div>
+                <div className="w-12 h-12 border-2 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
               </div>
               <p className="text-text-secondary text-lg">Loading games...</p>
             </div>
@@ -109,14 +146,18 @@ export default function Home() {
         {!loading && !error && games.length === 0 && (
           <Card className="border-dashed border-2 border-neon-pink/30 text-center py-12">
             <p className="text-text-secondary mb-4">
-              No games available. Run the update_games.py script to fetch games.
+              No recent searches. Click a question above or use the search feature to get started.
             </p>
           </Card>
         )}
 
-        {/* Games Grid */}
+        {/* Games Grid - Hidden by default, shown only if user has recent searches */}
         {!loading && !error && games.length > 0 && (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <h3 className="text-lg font-semibold text-text-secondary uppercase tracking-wider mb-6">
+              Your Recent Searches (Last 48 Hours)
+            </h3>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {games.map((game) => (
               <Link key={game.game_id} href={`/game/${game.game_id}`}>
                 <Card
@@ -175,6 +216,7 @@ export default function Home() {
                 </Card>
               </Link>
             ))}
+            </div>
           </div>
         )}
       </main>

@@ -87,7 +87,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <div className="inline-block">
-                <div className="w-12 h-12 border-2 border-neon-pink border-t-transparent rounded-full animate-spin mb-4"></div>
+                <div className="w-12 h-12 border-2 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
               </div>
               <p className="text-text-secondary text-lg">Loading dashboard...</p>
             </div>
