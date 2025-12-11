@@ -8,6 +8,7 @@
 
 import React from 'react';
 import { FaLinkedin, FaEnvelope, FaHeart, FaGithub } from 'react-icons/fa';
+import { SiKofi } from 'react-icons/si';
 
 export default function Footer() {
   return (
@@ -24,15 +25,14 @@ export default function Footer() {
             real-time insights and AI-powered recommendations.
           </p>
           <a
-            href="https://github.com/jmenichole/tiltcheck-monorepo"
+            href="https://tiltcheck.me"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 bg-neon-pink/10 border border-neon-pink 
                      text-neon-pink rounded-lg hover:bg-neon-pink hover:text-dark-bg 
                      transition-all duration-300 neon-glow-hover group"
           >
-            <FaGithub className="text-xl" />
-            <span className="font-semibold">View TiltCheck on GitHub</span>
+            <span className="font-semibold">Visit TiltCheck</span>
             <svg 
               className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" 
               fill="none" 
@@ -77,7 +77,18 @@ export default function Footer() {
           </div>
 
           {/* Social Links */}
+          {/* Social Links */}
           <div className="flex items-center gap-6">
+            <a
+              href="https://ko-fi.com/jmenichole0"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-[#FF5E5B] transition-colors duration-300 
+                       hover:scale-110 transform"
+              aria-label="Support on Ko-fi"
+            >
+              <SiKofi className="text-2xl neon-glow-hover" />
+            </a>
             <a
               href="https://linkedin.com/in/jmenichole0"
               target="_blank"
@@ -107,7 +118,6 @@ export default function Footer() {
               <FaGithub className="text-2xl neon-glow-hover" />
             </a>
           </div>
-        </div>
       </div>
     </footer>
   );
