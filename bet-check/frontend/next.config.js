@@ -2,6 +2,7 @@
 const config = {
   reactStrictMode: true,
   trailingSlash: true,
+  output: 'standalone',
   images: {
     unoptimized: true,
   },
