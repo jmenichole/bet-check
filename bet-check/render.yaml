@@ -1,5 +1,5 @@
-# Render.com Backend Deployment Configuration
-# Deploy your FastAPI backend to Render.com (free tier available)
+# Render.com Deployment Configuration
+# Deploy both FastAPI backend and Next.js frontend to Render.com
 
 services:
   - type: web
@@ -16,3 +16,14 @@ services:
         sync: false
       - key: SPORTS_API_KEY
         sync: false
+
+  - type: web
+    name: bet-check-frontend
+    env: node
+    buildCommand: cd frontend && npm ci && npm run build
+    startCommand: cd frontend && npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18
+      - key: NEXT_PUBLIC_API_URL
+        value: https://bet-check-backend.onrender.com
