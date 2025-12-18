@@ -16,6 +16,14 @@ This repository contains **comprehensive migration documentation** for moving th
 
 ## 🎯 Start Here: Choose Your Path
 
+### ⭐ For GitHub Copilot Users (RECOMMENDED)
+🤖 **Use:** [COPILOT_MIGRATION_PROMPT.md](COPILOT_MIGRATION_PROMPT.md)
+- Ready-to-use GitHub Copilot prompt
+- Copy & paste into Copilot in tiltcheck-monorepo
+- Automated step-by-step execution
+- Validation steps included
+- **Fastest & easiest option!**
+
 ### For Stakeholders & Managers
 👔 **Read:** [MIGRATION_SUMMARY.md](MIGRATION_SUMMARY.md)
 - Executive overview (8 pages)
@@ -57,12 +65,13 @@ This repository contains **comprehensive migration documentation** for moving th
 
 | Document | Size | Lines | Audience | Purpose | Read Time |
 |----------|------|-------|----------|---------|-----------|
-| MIGRATION_SUMMARY.md | 12 KB | 520 | Stakeholders | Executive overview | 10 min |
+| ⭐ COPILOT_MIGRATION_PROMPT.md | 14 KB | 580 | Copilot users | Automated execution | 5 min |
+| MIGRATION_SUMMARY.md | 12 KB | 457 | Stakeholders | Executive overview | 10 min |
 | MIGRATION_PLAN.md | 37 KB | 1,501 | Developers | Complete guide | 45 min |
 | MIGRATION_QUICK_START.md | 6.4 KB | 305 | Experienced devs | Fast execution | 10 min |
 | MIGRATION_CHECKLIST.md | 8.3 KB | 345 | Executors | Task tracking | 5 min |
-| MIGRATION_VISUAL_GUIDE.md | 20 KB | 830 | Visual learners | Diagrams & flows | 20 min |
-| **TOTAL** | **84 KB** | **3,501** | All | Complete migration | - |
+| MIGRATION_VISUAL_GUIDE.md | 27 KB | 722 | Visual learners | Diagrams & flows | 20 min |
+| **TOTAL** | **120 KB** | **4,424** | All | Complete migration | - |
 
 ---
 
@@ -72,6 +81,10 @@ This repository contains **comprehensive migration documentation** for moving th
                     MIGRATION_INDEX.md
                           │
                     (You are here)
+                          │
+                          ↓
+                  ⭐ COPILOT PROMPT ⭐
+              (Recommended starting point)
                           │
         ┌─────────────────┼─────────────────┐
         │                 │                 │
