@@ -718,5 +718,5 @@ For detailed instructions, see:
 ---
 
 **Document Version:** 1.0  
-**Last Updated:** December 18, 2025  
+**Last Updated:** December 18, 2024  
 **Author:** Jamie Vargas (@jmenichole)

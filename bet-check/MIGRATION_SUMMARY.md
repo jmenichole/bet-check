@@ -9,7 +9,7 @@
 This document provides a high-level summary of the migration plan for moving the **bet-check** sports prediction application into the **tiltcheck-monorepo** repository.
 
 **Status:** ✅ Planning Complete - Ready for Execution  
-**Date Prepared:** December 18, 2025  
+**Date Prepared:** December 18, 2024  
 **Prepared By:** Jamie Vargas (@jmenichole)
 
 ---
@@ -436,7 +436,7 @@ This migration has been thoroughly planned and documented. The process is:
 ---
 
 **Document Version:** 1.0  
-**Last Updated:** December 18, 2025  
+**Last Updated:** December 18, 2024  
 **Status:** ✅ Ready for Approval
 
 ---
