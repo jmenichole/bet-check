@@ -369,6 +369,18 @@ export default function GamePrediction() {
               </div>
             </Card>
 
+            {/* Monetization - DraftKings Affiliate Link */}
+            <div className="mt-10 text-center">
+              <a
+                href={`https://sportsbook.draftkings.com/search?q=${encodeURIComponent(`${game.team_a} vs ${game.team_b}`)}&ref=betcheck`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-10 py-5 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-2xl transition-all"
+              >
+                Bet on this game → DraftKings (affiliate)
+              </a>
+            </div>
+
             {/* Back Button */}
             <div className="flex justify-center">
               <Link href="/">

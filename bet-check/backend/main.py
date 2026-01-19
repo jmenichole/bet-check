@@ -7,7 +7,7 @@ Licensed under MIT License
 https://jmenichole.github.io/Portfolio/
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
@@ -16,11 +16,7 @@ from dotenv import load_dotenv
 import numpy as np
 from datetime import datetime
 from supabase import create_client, Client
-from backend.mines import get_predictor, update_prediction_accuracy, demo_games as mines_demo_games
-from backend.result_fetcher import ESPNResultFetcher
-
-# Demo storage for games
-demo_games = {}
+import stripe
 
 # Load environment variables
 load_dotenv()
@@ -85,15 +81,6 @@ class ResultLog(BaseModel):
     game_id: str
     actual_outcome: str
 
-class ChatMessage(BaseModel):
-    message: str
-    user_id: Optional[str] = "anonymous"
-
-class ChatResponse(BaseModel):
-    ai_message: str
-    suggested_games: List[dict]
-    timestamp: str
-
 # ==================== Demo Data (for when Supabase is not configured) ====================
 
 DEMO_FACTORS = [
@@ -106,56 +93,48 @@ DEMO_FACTORS = [
 
 # Fetch live games from ESPN on startup
 def fetch_live_games():
-    """Fetch current games from ESPN API - all major sports"""
+    """Fetch current games from ESPN API - NBA focus"""
     try:
         import requests
         from datetime import timedelta
         
-        # ESPN API endpoints for different sports
-        sports_endpoints = {
-            "nba": "basketball/nba",
-            "nfl": "football/nfl",
-            "mlb": "baseball/mlb",
-            "nhl": "hockey/nhl",
-            "ncaaf": "football/college-football",
-            "ncaab": "basketball/mens-college-basketball",
-        }
+        # ESPN API endpoint - NBA focused
+        sport_path = "basketball/nba"
         
         all_games = []
         
-        for sport_key, sport_path in sports_endpoints.items():
-            for days_ahead in range(3):  # Next 3 days
-                try:
-                    target_date = datetime.now() + timedelta(days=days_ahead)
-                    date_str = target_date.strftime("%Y%m%d")
-                    url = f"http://site.api.espn.com/apis/site/v2/sports/{sport_path}/scoreboard?dates={date_str}"
+        for days_ahead in range(5):  # Next 5 days
+            try:
+                target_date = datetime.now() + timedelta(days=days_ahead)
+                date_str = target_date.strftime("%Y%m%d")
+                url = f"http://site.api.espn.com/apis/site/v2/sports/{sport_path}/scoreboard?dates={date_str}"
+                
+                response = requests.get(url, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    events = data.get("events", [])
                     
-                    response = requests.get(url, timeout=10)
-                    if response.status_code == 200:
-                        data = response.json()
-                        events = data.get("events", [])
-                        
-                        for event in events:
-                            try:
-                                comps = event.get("competitions", [{}])[0]
-                                competitors = comps.get("competitors", [])
-                                if len(competitors) >= 2:
-                                    all_games.append({
-                                        "game_id": f"{sport_key}_{event.get('id')}",
-                                        "sport": sport_key,
-                                        "team_a": competitors[0].get("team", {}).get("displayName", "Unknown"),
-                                        "team_b": competitors[1].get("team", {}).get("displayName", "Unknown"),
-                                        "scheduled_date": event.get("date", "")[:10],
-                                        "result": None
-                                    })
-                            except Exception as e:
-                                continue
-                        
-                        if events:
-                            print(f"✓ Loaded {len(events)} {sport_key.upper()} games for {date_str}")
-                except Exception as e:
-                    print(f"⚠ Failed to fetch {sport_key.upper()} games: {e}")
-                    continue
+                    for event in events:
+                        try:
+                            comps = event.get("competitions", [{}])[0]
+                            competitors = comps.get("competitors", [])
+                            if len(competitors) >= 2:
+                                all_games.append({
+                                    "game_id": f"nba_{event.get('id')}",
+                                    "sport": "nba",
+                                    "team_a": competitors[0].get("team", {}).get("displayName", "Unknown"),
+                                    "team_b": competitors[1].get("team", {}).get("displayName", "Unknown"),
+                                    "scheduled_date": event.get("date", "")[:10],
+                                    "result": None
+                                })
+                        except Exception as e:
+                            continue
+                    
+                    if events:
+                        print(f"✓ Loaded {len(events)} NBA games for {date_str}")
+            except Exception as e:
+                print(f"⚠ Failed to fetch NBA games: {e}")
+                continue
         
         print(f"📊 Total games loaded: {len(all_games)}")
         return all_games if all_games else None
@@ -165,52 +144,8 @@ def fetch_live_games():
 
 DEMO_GAMES = fetch_live_games() or [
     {"game_id": "nba_demo_1", "sport": "nba", "team_a": "Los Angeles Lakers", "team_b": "Boston Celtics", "scheduled_date": datetime.now().strftime("%Y-%m-%d"), "result": None},
-    {"game_id": "nfl_demo_1", "sport": "nfl", "team_a": "Kansas City Chiefs", "team_b": "Buffalo Bills", "scheduled_date": datetime.now().strftime("%Y-%m-%d"), "result": None},
-    {"game_id": "mlb_demo_1", "sport": "mlb", "team_a": "New York Yankees", "team_b": "Los Angeles Dodgers", "scheduled_date": datetime.now().strftime("%Y-%m-%d"), "result": None},
+    {"game_id": "nba_demo_2", "sport": "nba", "team_a": "Golden State Warriors", "team_b": "Denver Nuggets", "scheduled_date": datetime.now().strftime("%Y-%m-%d"), "result": None},
 ]
-
-# ==================== Automated Result Fetcher ====================
-
-result_fetcher = ESPNResultFetcher()
-
-def auto_update_game_result(game_id: str, result_data: dict):
-    """
-    Callback function when ESPN fetches a result automatically
-    Updates game in DEMO_GAMES and triggers weight adaptation
-    result_data: {"winner": "X", "team_a": "A", "team_b": "B", "score_a": 95, "score_b": 87}
-    """
-    global DEMO_GAMES
-    
-    # Update game in memory
-    for game in DEMO_GAMES:
-        if game["game_id"] == game_id:
-            game["result"] = result_data["winner"]
-            game["score_a"] = result_data.get("score_a")
-            game["score_b"] = result_data.get("score_b")
-            game["verified"] = False  # Mark as unverified until user confirms
-            print(f"✅ Auto-fetched {game_id}: {result_data['team_a']} {result_data['score_a']} - {result_data['score_b']} {result_data['team_b']}")
-            break
-    
-    # Update database if available
-    if supabase:
-        try:
-            supabase.table("games").update({
-                "result": result_data["winner"],
-                "score_a": result_data.get("score_a"),
-                "score_b": result_data.get("score_b"),
-                "verified": False,  # Wait for user confirmation
-                "updated_at": datetime.utcnow().isoformat()
-            }).eq("game_id", game_id).execute()
-            print(f"📝 Saved to database: {game_id}")
-        except Exception as e:
-            print(f"Warning: Could not save to database: {e}")
-    
-    # DO NOT trigger learning yet - wait for user verification
-    print(f"⏳ Awaiting verification for {game_id}")
-
-# Start background result fetcher (checks every 6 hours)
-print("🔄 Starting automated ESPN result fetcher...")
-result_fetcher.start_background_fetcher(auto_update_game_result, interval_hours=6)
 
 # ==================== Core Prediction Logic ====================
 
@@ -394,165 +329,6 @@ async def list_games(sport: Optional[str] = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# ==================== MINES ENDPOINTS ====================
-
-@app.post("/mines/game/create")
-async def create_mines_game(grid_size: int = 5, num_bombs: int = None):
-    """Create new mines game"""
-    try:
-        predictor = get_predictor()
-        game = predictor.create_game(grid_size, num_bombs)
-        
-        # Store in demo storage
-        demo_games[game["game_id"]] = {
-            **game,
-            "revealed_tiles": []
-        }
-        
-        return game
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/mines/game/{game_id}")
-async def get_mines_game(game_id: str):
-    """Get mines game state"""
-    try:
-        if game_id not in demo_games:
-            raise HTTPException(status_code=404, detail="Game not found")
-        
-        game = demo_games[game_id]
-        predictor = get_predictor()
-        stats = predictor.calculate_game_stats(
-            game_id,
-            game["revealed_tiles"],
-            game["grid_size"],
-            game["num_bombs"],
-        )
-        
-        return {
-            **game,
-            "stats": stats
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/mines/predict/{game_id}")
-async def predict_mines_tiles(game_id: str):
-    """Get tile predictions for mines game"""
-    try:
-        if game_id not in demo_games:
-            raise HTTPException(status_code=404, detail="Game not found")
-        
-        game = demo_games[game_id]
-        predictor = get_predictor()
-        predictions = predictor.get_tile_predictions(
-            game_id,
-            game["grid_size"],
-            game["revealed_tiles"],
-            game["num_bombs"],
-        )
-        
-        return {
-            "game_id": game_id,
-            "total_predictions": len(predictions),
-            "tiles": predictions[:20],
-            "timestamp": datetime.now().isoformat()
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/mines/click/{game_id}")
-async def record_mines_click(game_id: str, x: int, y: int, is_safe: bool):
-    """Record a tile click and update game with adaptive learning"""
-    try:
-        if game_id not in demo_games:
-            raise HTTPException(status_code=404, detail="Game not found")
-        
-        game = demo_games[game_id]
-        
-        # Check if we had a prediction for this tile
-        predictor = get_predictor()
-        old_predictions = predictor.get_tile_predictions(
-            game_id,
-            game["grid_size"],
-            game["revealed_tiles"],
-            game["num_bombs"],
-        )
-        
-        tile_prediction = next((p for p in old_predictions if p["x"] == x and p["y"] == y), None)
-        
-        # Update adaptive learning weights based on outcome
-        if tile_prediction:
-            predicted_safe = tile_prediction["safe_probability"] > 0.5
-            was_correct = (predicted_safe and is_safe) or (not predicted_safe and not is_safe)
-            update_prediction_accuracy(was_correct, tile_prediction["safe_probability"])
-        
-        # Add tile to revealed
-        game["revealed_tiles"].append({
-            "x": x,
-            "y": y,
-            "is_bomb": not is_safe,
-            "clicked_at": datetime.now().isoformat()
-        })
-        
-        # Update game status
-        if not is_safe:
-            game["status"] = "busted"
-        
-        # Get updated predictions
-        predictions = predictor.get_tile_predictions(
-            game_id,
-            game["grid_size"],
-            game["revealed_tiles"],
-            game["num_bombs"],
-        )
-        stats = predictor.calculate_game_stats(
-            game_id,
-            game["revealed_tiles"],
-            game["grid_size"],
-            game["num_bombs"],
-        )
-        
-        return {
-            "game_id": game_id,
-            "click_result": "SAFE" if is_safe else "BOMB",
-            "game_status": game["status"],
-            "stats": stats,
-            "next_predictions": predictions[:10]
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/mines/analytics")
-async def get_mines_analytics():
-    """Get mines game analytics"""
-    try:
-        if not demo_games:
-            return {
-                "total_games": 0,
-                "active_games": 0,
-                "avg_prediction_accuracy": 0
-            }
-        
-        total = len(demo_games)
-        active = sum(1 for g in demo_games.values() if g["status"] == "active")
-        
-        return {
-            "total_games": total,
-            "active_games": active,
-            "avg_prediction_accuracy": 0.75,
-            "timestamp": datetime.now().isoformat()
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 @app.get("/predict/{game_id}", response_model=Prediction)
 async def get_prediction(game_id: str):
     """
@@ -661,11 +437,11 @@ async def log_result(result_log: ResultLog):
 @app.post("/verify_result/{game_id}")
 async def verify_result(game_id: str, is_correct: bool):
     """
-    Verify that ESPN-fetched result is accurate
+    Verify that result is accurate
     
     Params:
         game_id: Game ID
-        is_correct: True if ESPN result is accurate, False if incorrect
+        is_correct: True if result is accurate, False if incorrect
     
     Returns:
         Confirmation with adaptive learning status
@@ -684,7 +460,7 @@ async def verify_result(game_id: str, is_correct: bool):
         # Mark as verified
         game["verified"] = True
         
-        # Only trigger learning if ESPN result was correct
+        # Only trigger learning if result was correct
         if is_correct:
             print(f"✅ Result verified as CORRECT: {game_id}")
             
@@ -831,198 +607,33 @@ async def get_analytics():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# ==================== AI Sports Guru Chat Endpoints ====================
+# ==================== Stripe Webhook ====================
 
-@app.post("/chat", response_model=ChatResponse)
-async def chat_with_ai(chat_message: ChatMessage):
-    """
-    AI Sports Guru chat endpoint - analyzes user question and suggests relevant games
-    with predictions and reasoning.
-    
-    This endpoint:
-    1. Analyzes the user's question about sports/betting
-    2. Fetches relevant games from the database
-    3. Gets predictions with confidence scores
-    4. Constructs an intelligent response with game suggestions
-    5. Stores chat history in database
-    """
-    try:
-        user_message = chat_message.message.lower()
-        timestamp = datetime.now().isoformat()
-        
-        # Store user message in database (if connected)
-        if supabase:
-            try:
-                supabase.table("chat_messages").insert({
-                    "user_id": chat_message.user_id,
-                    "message_text": chat_message.message,
-                    "is_ai": False,
-                    "timestamp": timestamp
-                }).execute()
-            except:
-                pass  # Continue even if storage fails
-        
-        # Fetch games from database or demo data
-        if supabase:
-            games_response = supabase.table("games").select("*").is_("result", "null").limit(10).execute()
-            games = games_response.data if games_response.data else DEMO_GAMES
-        else:
-            games = DEMO_GAMES
-        
-        # Analyze user intent and filter relevant games
-        suggested_games = []
-        ai_message = ""
-        
-        # Detect sports mentioned in question
-        sports_mentioned = []
-        if "nba" in user_message or "basketball" in user_message:
-            sports_mentioned.append("nba")
-        if "nfl" in user_message or "football" in user_message:
-            sports_mentioned.append("nfl")
-        if "mlb" in user_message or "baseball" in user_message:
-            sports_mentioned.append("mlb")
-        
-        # Filter games by sport if mentioned
-        filtered_games = games
-        if sports_mentioned:
-            filtered_games = [g for g in games if g.get("sport", "").lower() in sports_mentioned]
-        
-        # Detect intent keywords
-        wants_best = any(word in user_message for word in ["best", "top", "good", "recommend", "should"])
-        wants_upset = any(word in user_message for word in ["upset", "underdog", "surprise"])
-        wants_safe = any(word in user_message for word in ["safe", "sure", "confident", "likely"])
-        wants_today = any(word in user_message for word in ["today", "tonight", "now"])
-        
-        # Get predictions for filtered games
-        for game in filtered_games[:5]:  # Limit to 5 suggestions
-            try:
-                # Generate prediction using existing engine
-                prediction = PredictionEngine.calculate_prediction(
-                    game["game_id"],
-                    game["team_a"],
-                    game["team_b"]
-                )
-                
-                # Apply filters based on user intent
-                include_game = True
-                if wants_safe and prediction.confidence < 65:
-                    include_game = False
-                if wants_upset and prediction.confidence > 60:
-                    include_game = False
-                
-                if include_game:
-                    suggested_games.append({
-                        "game_id": game["game_id"],
-                        "sport": game.get("sport", "nba"),
-                        "team_a": game["team_a"],
-                        "team_b": game["team_b"],
-                        "scheduled_date": game["scheduled_date"],
-                        "predicted_outcome": prediction.predicted_outcome,
-                        "confidence": prediction.confidence,
-                        "reasoning": prediction.reasons[:3]  # Top 3 reasons
-                    })
-            except:
-                continue
-        
-        # Construct AI response based on intent
-        if not suggested_games:
-            ai_message = "I couldn't find any games matching your criteria right now. Try asking about NBA, NFL, or check back later for more games!"
-        elif wants_safe:
-            ai_message = f"Here are {len(suggested_games)} high-confidence picks I found for you. These predictions have strong backing from multiple factors:"
-        elif wants_upset:
-            ai_message = f"Looking for underdog potential? I found {len(suggested_games)} games where the less-favored team has a fighting chance:"
-        elif wants_best:
-            ai_message = f"Based on my analysis, here are the top {len(suggested_games)} games I recommend betting on today:"
-        else:
-            ai_message = f"I analyzed the upcoming games and found {len(suggested_games)} interesting matches for you. Check out the predictions below:"
-        
-        # Store AI response in database (if connected)
-        if supabase:
-            try:
-                supabase.table("chat_messages").insert({
-                    "user_id": chat_message.user_id,
-                    "message_text": ai_message,
-                    "is_ai": True,
-                    "timestamp": timestamp
-                }).execute()
-            except:
-                pass
-        
-        return {
-            "ai_message": ai_message,
-            "suggested_games": suggested_games,
-            "timestamp": timestamp
-        }
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
-@app.get("/chat/popular-games")
-async def get_popular_games():
+@app.post("/webhook/stripe")
+async def stripe_webhook(request: Request):
     """
-    Get popular games based on prediction confidence and recent activity.
-    Used to display a small list of trending matches below the chat.
+    Stripe webhook handler for subscription payments
     """
-    try:
-        if supabase:
-            # Get games with highest confidence predictions
-            games_response = supabase.table("games").select("*").is_("result", "null").limit(6).execute()
-            games = games_response.data if games_response.data else DEMO_GAMES[:6]
-        else:
-            games = DEMO_GAMES[:6]
-        
-        popular_games = []
-        for game in games:
-            try:
-                prediction = PredictionEngine.calculate_prediction(
-                    game["game_id"],
-                    game["team_a"],
-                    game["team_b"]
-                )
-                popular_games.append({
-                    "game_id": game["game_id"],
-                    "sport": game.get("sport", "nba"),
-                    "team_a": game["team_a"],
-                    "team_b": game["team_b"],
-                    "scheduled_date": game["scheduled_date"],
-                    "predicted_outcome": prediction.predicted_outcome,
-                    "confidence": prediction.confidence
-                })
-            except:
-                continue
-        
-        # Sort by confidence (highest first)
-        popular_games.sort(key=lambda x: x["confidence"], reverse=True)
-        
-        return popular_games[:4]  # Return top 4
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
     
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/chat/history")
-async def get_chat_history(user_id: str = "anonymous", limit: int = 50):
-    """
-    Retrieve chat history for a user.
-    """
     try:
-        if supabase:
-            response = supabase.table("chat_messages")\
-                .select("*")\
-                .eq("user_id", user_id)\
-                .order("timestamp", desc=True)\
-                .limit(limit)\
-                .execute()
-            
-            # Reverse to show oldest first
-            messages = list(reversed(response.data)) if response.data else []
-            return messages
-        else:
-            return []
-    
+        event = stripe.Webhook.construct_event(
+            payload,
+            sig_header,
+            os.getenv("STRIPE_WEBHOOK_SECRET")
+        )
+        if event.type == "checkout.session.completed":
+            print("Subscription success:", event.data.object.customer)
+            # TODO: later → update user premium status in DB
+        return {"status": "ok"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(400, "Webhook error")
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=9001)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
